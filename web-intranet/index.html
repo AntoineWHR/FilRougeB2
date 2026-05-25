@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YOps Intranet</title>
+  <style>
+    :root {
+      --ink: #2c3138;
+      --muted: #6d7480;
+      --soft: #f7f3ef;
+      --paper: #ffffff;
+      --line: #e7e1da;
+      --blue: #0f79ad;
+      --blue-dark: #064c68;
+      --blue-soft: #d9f0fa;
+      --violet: #3b0c66;
+      --pink: #f257b7;
+      --green: #51b876;
+      --amber: #f3b64a;
+      --shadow: 0 18px 45px rgba(40, 45, 55, .13);
+      --curve: cubic-bezier(.16, 1, .3, 1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Aptos", "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 0 52%, rgba(255,255,255,.82) 0 12rem, transparent 12.2rem),
+        radial-gradient(circle at 92% 51%, rgba(255,255,255,.78) 0 16rem, transparent 16.2rem),
+        linear-gradient(135deg, #ffd8a7 0%, #ffd6b8 36%, #ed7b68 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; }
+
+    .page {
+      width: min(1430px, calc(100% - 48px));
+      margin: 66px auto;
+      padding: 22px;
+      border-radius: 42px;
+      background: rgba(255,255,255,.76);
+      box-shadow: 0 42px 90px rgba(84, 50, 35, .19);
+    }
+
+    .app {
+      overflow: hidden;
+      border-radius: 30px;
+      background: var(--paper);
+      border: 1px solid rgba(255,255,255,.78);
+      min-height: 900px;
+    }
+
+    .topbar {
+      height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      padding: 0 22px 0 18px;
+      background: rgba(255,255,255,.95);
+      border-bottom: 1px solid #eee8e2;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 13px;
+      border-radius: 18px;
+      color: white;
+      background: linear-gradient(135deg, #5fb1d4, #431288);
+      box-shadow: inset 0 0 0 4px rgba(255,255,255,.36);
+      font-weight: 800;
+      font-size: 21px;
+      letter-spacing: -.03em;
+    }
+
+    .brand span {
+      font-weight: 500;
+      opacity: .88;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 34px;
+      margin-left: auto;
+      color: #3d4248;
+      font-size: 12px;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .nav a {
+      text-decoration: none;
+      white-space: nowrap;
+      transition: color 240ms var(--curve);
+    }
+
+    .nav a:hover { color: var(--blue); }
+
+    .tools {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #68707a;
+    }
+
+    .icon {
+      width: 23px;
+      height: 23px;
+      display: inline-grid;
+      place-items: center;
+      color: currentColor;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 33%, #f4c6a5 0 18%, transparent 19%),
+        radial-gradient(circle at 50% 65%, #263548 0 31%, transparent 32%),
+        linear-gradient(135deg, #19304a, #e5b37b);
+      border: 3px solid #f1ede8;
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 44px;
+      min-height: 330px;
+      padding: 72px 150px 54px 250px;
+      background:
+        radial-gradient(circle at 28% 18%, rgba(113,45,156,.58), transparent 19rem),
+        linear-gradient(120deg, #31004f 0%, #351064 37%, #116d9e 100%);
+      color: white;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(36px, 4vw, 54px);
+      line-height: 1.02;
+      letter-spacing: -.045em;
+      font-weight: 760;
+    }
+
+    .hero p {
+      margin: 12px 0 0;
+      color: rgba(255,255,255,.86);
+      font-size: 16px;
+    }
+
+    .search {
+      width: min(430px, 100%);
+      margin-top: 26px;
+      height: 54px;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 18px 0 25px;
+      background: #fff;
+      color: #8b8f96;
+      box-shadow: 0 9px 20px rgba(31, 17, 66, .18);
+    }
+
+    .search span { font-size: 15px; }
+    .search svg { color: var(--pink); }
+
+    .quick-panel {
+      align-self: center;
+      border-radius: 16px;
+      background: rgba(255,255,255,.97);
+      color: var(--ink);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .quick-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+
+    .quick-title h2 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: -.02em;
+    }
+
+    .quick-list {
+      display: grid;
+      gap: 13px;
+    }
+
+    .quick-item {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      align-items: center;
+      gap: 10px;
+      color: #353941;
+      text-decoration: none;
+      font-size: 15px;
+    }
+
+    .quick-item svg {
+      color: var(--blue);
+    }
+
+    .shortcut-band {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+      padding: 34px 156px 30px;
+      background: #fff;
+    }
+
+    .shortcut {
+      min-height: 104px;
+      border-radius: 11px;
+      padding: 17px 24px;
+      display: grid;
+      grid-template-columns: 76px 1fr;
+      align-items: center;
+      gap: 18px;
+      color: white;
+      text-decoration: none;
+      background: var(--blue);
+      transition: transform 260ms var(--curve), box-shadow 260ms var(--curve);
+    }
+
+    .shortcut:nth-child(2) { background: #0875a1; }
+    .shortcut:nth-child(3) { background: #064e68; }
+
+    .shortcut:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 25px rgba(20, 89, 126, .18);
+    }
+
+    .round-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.24);
+      box-shadow: 0 0 0 9px rgba(255,255,255,.12);
+    }
+
+    .shortcut strong {
+      display: block;
+      font-size: 21px;
+      letter-spacing: -.025em;
+    }
+
+    .shortcut span {
+      display: block;
+      margin-top: 3px;
+      opacity: .92;
+      font-size: 15px;
+    }
+
+    .section {
+      padding: 44px 154px 60px;
+    }
+
+    .section.blue {
+      background:
+        radial-gradient(circle at 22% 12%, rgba(255,255,255,.65), transparent 18rem),
+        #dff5fd;
+    }
+
+    .section.white {
+      background: #fff;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 26px;
+    }
+
+    .section h2 {
+      margin: 0;
+      text-align: center;
+      font-size: 27px;
+      letter-spacing: -.02em;
+      width: 100%;
+    }
+
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid rgba(70, 95, 110, .1);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 6px 18px rgba(31, 75, 97, .08);
+      transition: transform 260ms var(--curve), box-shadow 260ms var(--curve);
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 28px rgba(31, 75, 97, .12);
+    }
+
+    .meta {
+      display: flex;
+      gap: 12px;
+      color: #8a929b;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    .meta strong {
+      color: #2093cc;
+      font-weight: 500;
+    }
+
+    .media {
+      height: 174px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      overflow: hidden;
+      position: relative;
+      background: #eaf2f5;
+    }
+
+    .media::before,
+    .media::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+    }
+
+    .media.soc {
+      background:
+        linear-gradient(135deg, rgba(4, 76, 104, .18), rgba(255,255,255,.1)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.3) 0 2px, transparent 2px 18px),
+        linear-gradient(135deg, #d7edf4, #f8fbfc);
+    }
+
+    .media.soc::before {
+      width: 116px;
+      height: 116px;
+      left: 35px;
+      top: 32px;
+      background: radial-gradient(circle, #24415a 0 18%, #98c9d8 19% 42%, transparent 43%);
+    }
+
+    .media.soc::after {
+      width: 230px;
+      height: 18px;
+      right: 28px;
+      bottom: 38px;
+      background: linear-gradient(90deg, #0f79ad, #51b876);
+      border-radius: 5px;
+    }
+
+    .media.ops {
+      background:
+        linear-gradient(135deg, rgba(81,184,118,.18), transparent),
+        linear-gradient(90deg, #eef8ef, #d9f0fa);
+    }
+
+    .media.ops::before {
+      width: 210px;
+      height: 126px;
+      right: 30px;
+      top: 25px;
+      background:
+        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(135deg, #6ac3e6, #51b876) border-box;
+      border: 8px solid transparent;
+      border-radius: 18px;
+    }
+
+    .media.ops::after {
+      width: 120px;
+      height: 120px;
+      left: 38px;
+      top: 38px;
+      background: radial-gradient(circle, #f3b64a 0 12%, #ffffff 13% 32%, #8fcade 33% 51%, transparent 52%);
+    }
+
+    .media.team {
+      background:
+        linear-gradient(135deg, rgba(242,87,183,.14), transparent),
+        linear-gradient(135deg, #f7f2ec, #dff5fd);
+    }
+
+    .media.team::before {
+      width: 84px;
+      height: 84px;
+      left: 34px;
+      top: 46px;
+      background: radial-gradient(circle at 50% 28%, #e8b18a 0 18%, transparent 19%), #263548;
+      border-radius: 22px;
+    }
+
+    .media.team::after {
+      width: 162px;
+      height: 104px;
+      right: 34px;
+      top: 46px;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: inset 0 0 0 2px rgba(15,121,173,.12);
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.08;
+      letter-spacing: -.025em;
+    }
+
+    .card p {
+      margin: 10px 0 0;
+      color: #5f6670;
+      line-height: 1.45;
+      font-size: 15px;
+    }
+
+    .social {
+      display: flex;
+      gap: 16px;
+      margin-top: 18px;
+      color: #747b83;
+      font-size: 14px;
+    }
+
+    .see-all {
+      display: flex;
+      justify-content: end;
+      margin-top: 24px;
+    }
+
+    .see-all a {
+      color: #2093cc;
+      text-decoration: none;
+      font-size: 15px;
+    }
+
+    .events {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    .event {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 18px;
+      align-items: center;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 5px 14px rgba(41, 49, 60, .05);
+    }
+
+    .date {
+      border-radius: 12px;
+      background: #e7f4fa;
+      color: var(--blue);
+      text-align: center;
+      padding: 11px 8px;
+      font-weight: 800;
+    }
+
+    .date span {
+      display: block;
+      font-size: 12px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .event h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .event p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .footer {
+      padding: 32px 154px 42px;
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      color: #78808b;
+      font-size: 14px;
+      background: #fff;
+      border-top: 1px solid #eee8e2;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 520ms var(--curve), transform 520ms var(--curve);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 1120px) {
+      .hero,
+      .shortcut-band,
+      .section,
+      .footer {
+        padding-left: 42px;
+        padding-right: 42px;
+      }
+      .hero {
+        grid-template-columns: 1fr;
+      }
+      .quick-panel {
+        max-width: 420px;
+      }
+      .news-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      body { background: #f7d7c0; }
+      .page {
+        width: calc(100% - 18px);
+        margin: 9px auto;
+        padding: 8px;
+        border-radius: 24px;
+      }
+      .app { border-radius: 18px; }
+      .topbar {
+        height: auto;
+        padding: 14px;
+        align-items: flex-start;
+      }
+      .nav { display: none; }
+      .tools { margin-left: auto; }
+      .hero {
+        padding: 42px 22px;
+      }
+      .shortcut-band {
+        grid-template-columns: 1fr;
+        padding: 22px;
+      }
+      .section {
+        padding: 34px 22px;
+      }
+      .events {
+        grid-template-columns: 1fr;
+      }
+      .footer {
+        display: block;
+        padding: 24px 22px;
+      }
+      .footer span {
+        display: block;
+        margin-top: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="app">
+      <header class="topbar">
+        <div class="brand"><span>YOps</span>intranet</div>
+        <nav class="nav">
+          <a href="#actualites">Actualites</a>
+          <a href="#equipes">Equipes</a>
+          <a href="#documents">Documents</a>
+          <a href="#operations">Operations</a>
+          <a href="http://10.10.10.30:3001">Supervision</a>
+        </nav>
+        <div class="tools">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+          </span>
+          <span class="icon">
+            <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+          </span>
+          <div class="avatar" aria-label="Profil utilisateur"></div>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="reveal">
+          <h1>Bonjour equipe YOps</h1>
+          <p>Que peut-on securiser, verifier ou documenter aujourd'hui ?</p>
+          <div class="search">
+            <span>Rechercher dans l'intranet</span>
+            <svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+          </div>
+        </div>
+
+        <aside class="quick-panel reveal">
+          <div class="quick-title">
+            <h2>Mes acces rapides</h2>
+            <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="var(--pink)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+          </div>
+          <div class="quick-list">
+            <a class="quick-item" href="http://10.10.10.30:3001">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 13h4l2-6 4 12 2-6h4"/></svg>
+              <span>Supervision des services</span>
+            </a>
+            <a class="quick-item" href="https://10.10.10.1">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg>
+              <span>Console firewall</span>
+            </a>
+            <a class="quick-item" href="http://portal.yops.local">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>
+              <span>Portail interne</span>
+            </a>
+            <a class="quick-item" href="#documents">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5h7l2 3h7v11z"/></svg>
+              <span>Documents partages</span>
+            </a>
+            <a class="quick-item" href="#operations">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+              <span>Journal operationnel</span>
+            </a>
+          </div>
+        </aside>
+      </section>
+
+      <section id="equipes" class="shortcut-band">
+        <a class="shortcut reveal" href="#documents">
+          <span class="round-icon"><svg viewBox="0 0 24 24" width="31" height="31" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+          <span><strong>Nouvel arrivant ?</strong><span>Suivre le guide</span></span>
+        </a>
+        <a class="shortcut reveal" href="#documents">
+          <span class="round-icon"><svg viewBox="0 0 24 24" width="31" height="31" fill="none" stroke="white" stroke-width="2"><path d="M4 19V6h6l2 3h8v10z"/></svg></span>
+          <span><strong>Base documentaire</strong><span>Runbooks et procedures</span></span>
+        </a>
+        <a class="shortcut reveal" href="#operations">
+          <span class="round-icon"><svg viewBox="0 0 24 24" width="31" height="31" fill="none" stroke="white" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg></span>
+          <span><strong>Operations SOC</strong><span>Services et incidents</span></span>
+        </a>
+      </section>
+
+      <section id="actualites" class="section blue">
+        <div class="section-head">
+          <h2>Actualites internes</h2>
+        </div>
+        <div class="news-grid">
+          <article class="card reveal">
+            <div class="meta"><span>25/05/2026</span><strong>Securite</strong></div>
+            <div class="media soc"></div>
+            <h3>Le socle YOps est operationnel</h3>
+            <p>Active Directory, DNS, partages, Linux, supervision et sauvegardes sont en place pour l'environnement interne.</p>
+            <div class="social"><span>Commentaires 2</span><span>Validation 5</span></div>
+          </article>
+
+          <article class="card reveal">
+            <div class="meta"><span>25/05/2026</span><strong>Operations</strong></div>
+            <div class="media ops"></div>
+            <h3>Supervision des services critiques</h3>
+            <p>Uptime Kuma suit les composants principaux : firewall, controleur de domaine, web, base de donnees et portail.</p>
+            <div class="social"><span>Commentaires 1</span><span>Validation 4</span></div>
+          </article>
+
+          <article class="card reveal">
+            <div class="meta"><span>25/05/2026</span><strong>Organisation</strong></div>
+            <div class="media team"></div>
+            <h3>Espaces d'equipe disponibles</h3>
+            <p>Les groupes Direction, SOC, Commercial et IT Support disposent de partages adaptes a leurs droits.</p>
+            <div class="social"><span>Commentaires 3</span><span>Validation 6</span></div>
+          </article>
+        </div>
+        <div class="see-all"><a href="#actualites">Voir toutes les actualites</a></div>
+      </section>
+
+      <section id="documents" class="section white">
+        <div class="section-head">
+          <h2>Documents et espaces metiers</h2>
+        </div>
+        <div class="events">
+          <article class="event reveal">
+            <div class="date">SOC<span>Equipe</span></div>
+            <div>
+              <h3>Runbooks et veille cyber</h3>
+              <p>Procedures internes, suivi des alertes, consignes de reponse et documentation technique.</p>
+            </div>
+          </article>
+          <article class="event reveal">
+            <div class="date">DIR<span>Prive</span></div>
+            <div>
+              <h3>Pilotage et strategie</h3>
+              <p>Documents de direction, budget, priorites et syntheses de l'activite.</p>
+            </div>
+          </article>
+          <article class="event reveal">
+            <div class="date">IT<span>Support</span></div>
+            <div>
+              <h3>Postes et comptes</h3>
+              <p>Gestion des machines, assistance utilisateurs, acces et procedures de maintenance.</p>
+            </div>
+          </article>
+          <article class="event reveal">
+            <div class="date">PUB<span>Tous</span></div>
+            <div>
+              <h3>Documents communs</h3>
+              <p>Informations partagees a l'ensemble des collaborateurs YOps.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="operations" class="section blue">
+        <div class="section-head">
+          <h2>Evenements et operations</h2>
+        </div>
+        <div class="events">
+          <article class="event reveal">
+            <div class="date">09:00<span>Jour</span></div>
+            <div>
+              <h3>Verification des services</h3>
+              <p>Controle de disponibilite du portail, de la supervision, du DNS et de la base applicative.</p>
+            </div>
+          </article>
+          <article class="event reveal">
+            <div class="date">11:30<span>Ops</span></div>
+            <div>
+              <h3>Revue des acces</h3>
+              <p>Controle des groupes AD, droits de partage et comptes utilisateurs de demonstration.</p>
+            </div>
+          </article>
+          <article class="event reveal">
+            <div class="date">15:00<span>Infra</span></div>
+            <div>
+              <h3>Point sauvegardes</h3>
+              <p>Verification des sauvegardes Proxmox et de la strategie de restauration.</p>
+            </div>
+          </article>
+          <article class="event reveal">
+            <div class="date">17:00<span>Dev</span></div>
+            <div>
+              <h3>Preparation application YOps</h3>
+              <p>Prochaine etape : brancher l'application metier sur le serveur web et la base MariaDB.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <strong>YOps Cybersecurity</strong>
+        <span>Intranet interne heberge sur YOPS-WEB01 - portail.yops.local</span>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll(".reveal").forEach((item, index) => {
+      item.style.transitionDelay = `${Math.min(index * 70, 420)}ms`;
+      observer.observe(item);
+    });
+  </script>
+</body>
+</html>
