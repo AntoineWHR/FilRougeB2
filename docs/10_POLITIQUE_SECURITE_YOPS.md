@@ -10,7 +10,8 @@ La securite repose donc sur trois idees :
 
 - limiter les acces ;
 - donner les droits par role ;
-- garder une capacite de restauration.
+- garder une capacite de restauration ;
+- surveiller les machines importantes.
 
 ## Acces distant
 
@@ -92,6 +93,33 @@ Mesures retenues :
 - base MariaDB accessible uniquement depuis les machines prevues ;
 - supervision via Uptime Kuma.
 
+## SOC et detection
+
+Wazuh a ete ajoute comme brique SOC.
+
+Adresse :
+
+```text
+https://10.10.10.25
+```
+
+Agents actifs :
+
+- `YOPS-WEB01`
+- `YOPS-DB01`
+- `YOPS-MON01`
+- `YOPS-DC01`
+- `YOPS-WIN01`
+
+Le but est de ne pas seulement verifier que les services repondent, mais aussi de suivre les evenements de securite des machines.
+
+Wazuh permet notamment de montrer :
+
+- une vue des endpoints ;
+- des alertes classees par criticite ;
+- la surveillance de serveurs Linux et Windows ;
+- une base pour ajouter ensuite un honeypot.
+
 ## Sauvegardes
 
 Les VMs principales ont ete sauvegardees avec Proxmox.
@@ -118,10 +146,12 @@ Uptime Kuma surveille les services importants :
 
 Pendant l'oral, c'est une preuve visuelle simple : on voit tout de suite si un service est disponible.
 
+Wazuh complete cette supervision avec une vision securite.  
+Uptime Kuma repond a la question "est-ce que le service est joignable ?", alors que Wazuh repond plutot a "qu'est-ce qui se passe sur la machine ?".
+
 ## Limites actuelles
 
 Je n'ai pas modifie toute l'architecture en VLAN pour ne pas casser le lab juste avant la presentation.  
 C'est un choix volontaire : le LAN actuel fonctionne, AD/DNS fonctionne, les partages fonctionnent et les serveurs Linux repondent.
 
 L'evolution propre serait de faire la segmentation dans une deuxieme phase, avec tests service par service.
-

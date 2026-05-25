@@ -21,7 +21,8 @@ L'infrastructure repose sur :
 - **pfSense** pour le routage, le pare-feu et le NAT ;
 - **Tailscale** pour l'acces distant securise ;
 - **Windows Server 2022** pour Active Directory, DNS, GPO et fichiers ;
-- **Linux** pour les futurs serveurs web, base de donnees et supervision.
+- **Linux** pour les serveurs web, base de donnees et supervision ;
+- **Wazuh** pour la centralisation des alertes securite et les agents endpoint.
 
 Tailscale remplace le VPN/IPSec classique. Ce choix est coherent pour une entreprise cyber moderne car il permet un acces distant de type Zero Trust sans exposer directement les services internes sur Internet.
 
@@ -40,6 +41,7 @@ Tailscale remplace le VPN/IPSec classique. Ce choix est coherent pour une entrep
 | YOPS-WIN01 | Client Windows domaine | 10.10.10.50 |
 | YOPS-WEB01 | Serveur web Linux | 10.10.10.20 |
 | YOPS-DB01 | Serveur base de donnees Linux | 10.10.10.21 |
+| Wazuh | SOC / SIEM / agents | 10.10.10.25 |
 | YOPS-MON01 | Serveur supervision Linux | 10.10.10.30 |
 
 Reseau interne YOps :
@@ -61,6 +63,7 @@ VMs presentes :
 | VMID | Nom | Etat | Role |
 |---:|---|---|---|
 | 100 | pfSense | Running | Pare-feu |
+| 110 | wazuh | Running | SOC / SIEM |
 | 210 | YOPS-DC01 | Running | Controleur de domaine |
 | 220 | YOPS-WEB01 | Running | Web Linux |
 | 221 | YOPS-DB01 | Running | Base MariaDB |
@@ -228,6 +231,7 @@ Trois serveurs Linux ont ete mis en place.
 | YOPS-WEB01 | 10.10.10.20 | Nginx, PHP, portail intranet YOps | OK |
 | YOPS-DB01 | 10.10.10.21 | MariaDB, base `yops_app` | OK |
 | YOPS-MON01 | 10.10.10.30 | Docker, Uptime Kuma | OK |
+| Wazuh | 10.10.10.25 | SOC, SIEM, agents endpoint | OK |
 
 Validation realisee :
 
@@ -274,6 +278,32 @@ Moniteurs conseilles :
 - YOPS-WEB01 : `http://10.10.10.20` ;
 - YOPS-DB01 : port TCP `10.10.10.21:3306` ;
 - YOPS-MON01 : `http://10.10.10.30:3001`.
+
+### SOC et supervision securite
+
+Wazuh est disponible sur :
+
+```text
+https://10.10.10.25
+```
+
+Agents actifs :
+
+| Agent | IP | Systeme | Etat |
+|---|---|---|---|
+| YOPS-WEB01 | 10.10.10.20 | Debian GNU/Linux 12 | Active |
+| YOPS-DB01 | 10.10.10.21 | Debian GNU/Linux 12 | Active |
+| YOPS-MON01 | 10.10.10.30 | Debian GNU/Linux 12 | Active |
+| YOPS-DC01 | 10.10.10.10 | Windows Server 2022 | Active |
+| YOPS-WIN01 | 10.10.10.50 | Windows 11 Pro | Active |
+
+Wazuh apporte une supervision securite differente d'Uptime Kuma :
+
+- Uptime Kuma valide la disponibilite des services ;
+- Wazuh centralise les evenements de securite des machines ;
+- les serveurs Linux, le controleur de domaine et le poste client remontent maintenant dans le SOC.
+
+Un ancien agent `honeypot` apparait encore en deconnecte. Il correspond a la future etape d'isolation honeypot sur un reseau separe.
 
 ### Sauvegardes
 
@@ -338,7 +368,10 @@ Serveur web Linux : OK
 Portail intranet YOps : OK
 Serveur MariaDB : OK
 Serveur supervision : OK
+Wazuh / SOC : OK
+Agents Wazuh Linux : OK
+Agents Wazuh Windows : OK
 Sauvegardes Proxmox : OK
 ```
 
-Le socle infrastructure Windows + Linux est donc operationnel. La suite principale est la partie developpement de l'application web YOps.
+Le socle infrastructure Windows + Linux est donc operationnel, avec une premiere brique SOC fonctionnelle. La suite principale est la partie developpement de l'application web YOps et, si le temps le permet, l'isolation d'un honeypot dans un reseau dedie.

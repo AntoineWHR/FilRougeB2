@@ -17,6 +17,7 @@ Le but du projet est de mettre en place une infrastructure d'entreprise complete
 - Mettre en place un domaine Windows Active Directory.
 - Gerer les utilisateurs, groupes, GPO et partages.
 - Deployer des services Linux : web, base de donnees, supervision.
+- Mettre en place une premiere brique SOC avec Wazuh.
 - Documenter l'infrastructure pour une presentation orale et un rapport.
 
 ## Architecture generale
@@ -50,6 +51,7 @@ Toutes les VMs internes utilisent `10.10.10.1` comme passerelle.
 | YOPS-DC01 | AD, DNS, fichiers | `10.10.10.10` |
 | YOPS-WEB01 | Nginx, PHP, portail intranet | `10.10.10.20` |
 | YOPS-DB01 | MariaDB | `10.10.10.21` |
+| Wazuh | SOC / SIEM / agents | `10.10.10.25` |
 | YOPS-MON01 | Uptime Kuma | `10.10.10.30` |
 | YOPS-WIN01 | Client Windows domaine | `10.10.10.50` |
 
@@ -58,6 +60,7 @@ Toutes les VMs internes utilisent `10.10.10.1` comme passerelle.
 | VMID | Nom | Systeme | Role | Etat |
 |---:|---|---|---|---|
 | 100 | pfSense | FreeBSD / pfSense | Pare-feu, NAT, routage | OK |
+| 110 | wazuh | Ubuntu | SOC, SIEM, agents endpoint | OK |
 | 210 | YOPS-DC01 | Windows Server 2022 | AD, DNS, fichiers, GPO | OK |
 | 220 | YOPS-WEB01 | Debian | Nginx, PHP, portail intranet | OK |
 | 221 | YOPS-DB01 | Debian | MariaDB | OK |
@@ -137,8 +140,25 @@ Les droits sont geres par groupes Active Directory et appliques au niveau NTFS.
 | `YOPS-WEB01` | Nginx + PHP + intranet | `http://portal.yops.local` |
 | `YOPS-DB01` | MariaDB | Base `yops_app` disponible |
 | `YOPS-MON01` | Uptime Kuma | `http://10.10.10.30:3001` |
+| `Wazuh` | SOC / SIEM | `https://10.10.10.25` |
 
 Le portail intranet YOps est heberge sur `YOPS-WEB01`.
+
+## SOC Wazuh
+
+Wazuh est utilise pour la supervision securite des machines.
+
+Agents actifs :
+
+| Agent | IP | Role |
+|---|---|---|
+| `YOPS-WEB01` | `10.10.10.20` | Serveur web Linux |
+| `YOPS-DB01` | `10.10.10.21` | Serveur base de donnees |
+| `YOPS-MON01` | `10.10.10.30` | Serveur supervision |
+| `YOPS-DC01` | `10.10.10.10` | Controleur de domaine |
+| `YOPS-WIN01` | `10.10.10.50` | Poste client Windows |
+
+Uptime Kuma surveille la disponibilite des services. Wazuh centralise les evenements de securite des endpoints.
 
 ## Securite
 
@@ -153,6 +173,7 @@ Mesures mises en place :
 - GPO de securite Windows.
 - UFW et services Linux limites aux ports necessaires.
 - Supervision avec Uptime Kuma.
+- Supervision securite avec Wazuh.
 - Sauvegardes Proxmox des VMs principales.
 
 ## Sauvegardes
@@ -194,6 +215,15 @@ curl -I http://10.10.10.20
 curl -I http://10.10.10.30:3001
 ```
 
+```text
+Wazuh Endpoints:
+YOPS-WEB01 active
+YOPS-DB01 active
+YOPS-MON01 active
+YOPS-DC01 active
+YOPS-WIN01 active
+```
+
 ```powershell
 nslookup yops.local
 nslookup portal.yops.local
@@ -216,6 +246,7 @@ Ameliorations prevues :
   - VLAN clients ;
   - VLAN administration ;
   - VLAN DMZ.
+- Isoler un honeypot dans un reseau dedie et remonter ses logs dans Wazuh.
 - Mettre en place HTTPS interne avec une autorite de certification locale.
 - Ajouter un reverse proxy pour acceder aux services avec des noms DNS propres.
 - Automatiser la planification des sauvegardes Proxmox.

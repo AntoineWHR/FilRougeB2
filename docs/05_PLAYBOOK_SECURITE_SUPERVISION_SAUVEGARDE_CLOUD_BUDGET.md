@@ -11,7 +11,8 @@ Principes :
 - principe du moindre privilege ;
 - comptes administrateurs separes des comptes utilisateurs ;
 - sauvegardes regulieres et testees ;
-- supervision des services critiques.
+- supervision des services critiques ;
+- centralisation des evenements de securite avec Wazuh.
 
 ## Regles d'acces
 
@@ -70,7 +71,12 @@ A faire :
 
 ## Supervision
 
-Solution simple : Uptime Kuma sur `YOPS-MON01`.
+Deux niveaux de supervision sont en place :
+
+- **Uptime Kuma** sur `YOPS-MON01` pour verifier la disponibilite ;
+- **Wazuh** sur `10.10.10.25` pour centraliser les alertes securite des machines.
+
+### Uptime Kuma
 
 Services supervises :
 
@@ -88,6 +94,25 @@ Alerting possible :
 - email ;
 - Discord/Teams webhook ;
 - notification locale pendant la demo.
+
+### Wazuh
+
+Agents actifs :
+
+| Agent | IP | Systeme | Role |
+|---|---|---|---|
+| YOPS-WEB01 | 10.10.10.20 | Debian | Web / intranet |
+| YOPS-DB01 | 10.10.10.21 | Debian | Base de donnees |
+| YOPS-MON01 | 10.10.10.30 | Debian | Supervision |
+| YOPS-DC01 | 10.10.10.10 | Windows Server | AD / DNS / fichiers |
+| YOPS-WIN01 | 10.10.10.50 | Windows 11 | Poste client |
+
+Objectif :
+
+- avoir une vue endpoint sur les serveurs et postes ;
+- detecter les evenements de securite ;
+- preparer l'ajout d'un honeypot isole ;
+- montrer une logique SOC coherente avec une entreprise cyber.
 
 ## Plan de sauvegarde
 
@@ -160,4 +185,3 @@ Cloud hybride : infrastructure locale Proxmox pour le lab, extension possible ve
 | Onduleur | 1 | 150 - 400 EUR |
 | Licences Windows Server | selon besoin | variable |
 | Nom de domaine + certificat | 1 | 20 - 150 EUR/an |
-

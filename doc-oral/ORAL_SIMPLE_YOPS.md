@@ -1,448 +1,586 @@
-# Oral simple - Projet YOps
+# Oral - Projet YOps Cybersecurity
+
+Ce document sert de fil conducteur pour l'oral.  
+L'objectif n'est pas de tout lire mot pour mot, mais d'avoir une presentation qui coule naturellement.
+
+## Plan simple de l'oral
+
+1. Presenter YOps et le besoin.
+2. Expliquer l'architecture generale.
+3. Montrer le reseau et l'acces distant.
+4. Presenter Windows Server : AD, DNS, utilisateurs, groupes, droits.
+5. Presenter les serveurs Linux : web, base de donnees et supervision.
+6. Presenter la partie SOC avec Wazuh.
+7. Expliquer la securite, les sauvegardes et le cloud hybride.
+8. Parler des limites actuelles et des evolutions prevues.
+9. Faire une courte demonstration.
+10. Conclure.
 
 ## Introduction
 
 Bonjour, je vais presenter mon projet fil rouge : **YOps Cybersecurity**.
 
-YOps est une entreprise fictive de cybersecurite. Elle a besoin d'une infrastructure interne securisee pour gerer ses employes, ses acces, ses fichiers et plus tard une application web metier.
+YOps est une entreprise fictive de cybersecurite.  
+L'objectif du projet est de construire une base d'infrastructure d'entreprise : un reseau interne, un pare-feu, un domaine Windows, des utilisateurs, des droits, des serveurs Linux, de la supervision et des sauvegardes.
 
-L'objectif etait de mettre en place une base d'entreprise avec du reseau, de la securite, du Windows Server et du Linux.
+J'ai volontairement adapte le sujet a une entreprise cyber, parce que cela permet d'avoir une infrastructure plus coherente avec la securite, l'administration distante et la supervision.
 
-## Idee generale
+Phrase simple :
 
-J'ai choisi une architecture avec :
+```text
+L'idee du projet, c'est de partir d'un lab Proxmox et de construire une petite infrastructure d'entreprise exploitable, securisee et documentee.
+```
 
-- Proxmox pour heberger les machines virtuelles ;
-- pfSense pour faire routeur et pare-feu ;
-- Tailscale pour l'acces distant securise ;
-- Windows Server pour l'Active Directory ;
-- Linux pour le serveur web, la base de donnees et la supervision.
+## Vue d'ensemble
 
-Le reseau interne de l'entreprise est :
+L'infrastructure repose sur plusieurs briques :
+
+- **Proxmox** pour heberger les machines virtuelles ;
+- **pfSense** pour le pare-feu, le routage et le NAT ;
+- **Tailscale** pour l'acces distant securise ;
+- **Windows Server** pour Active Directory, DNS, GPO et fichiers ;
+- **Linux** pour le portail web, la base de donnees et la supervision ;
+- **Wazuh** pour la partie SOC et detection securite.
+
+Le reseau interne YOps est :
 
 ```text
 10.10.10.0/24
 ```
 
-pfSense est la passerelle du reseau :
+La passerelle du reseau interne est pfSense :
 
 ```text
 10.10.10.1
 ```
 
-## Pourquoi Tailscale ?
+Les machines principales sont :
 
-Dans le sujet initial, il etait question de VPN/IPSec.
+| Machine | Role | IP |
+|---|---|---|
+| pfSense | Pare-feu / passerelle | `10.10.10.1` |
+| YOPS-DC01 | AD, DNS, fichiers | `10.10.10.10` |
+| YOPS-WEB01 | Portail intranet | `10.10.10.20` |
+| YOPS-DB01 | Base MariaDB | `10.10.10.21` |
+| Wazuh | SOC / SIEM / agents | `10.10.10.25` |
+| YOPS-MON01 | Supervision Uptime Kuma | `10.10.10.30` |
+| YOPS-WIN01 | Poste client domaine | `10.10.10.50` |
 
-Dans mon projet, j'ai choisi Tailscale car c'est plus moderne et plus simple pour une entreprise cyber.
+Phrase simple :
 
-Ca permet :
+```text
+pfSense se place entre le reseau interne YOps et le reseau maison. Les serveurs et le poste client sont dans le LAN interne, et sortent vers Internet en passant par pfSense.
+```
 
-- de se connecter a distance sans ouvrir les services sur Internet ;
-- de limiter l'acces aux machines autorisees ;
-- d'avoir une approche plus proche du Zero Trust.
+## Reseau et pfSense
 
-## Ce qui est deja en place
+pfSense a trois roles principaux dans mon projet :
 
-J'ai mis en place Proxmox avec pfSense.
+- faire passerelle pour le LAN YOps ;
+- faire du NAT vers Internet ;
+- filtrer les acces avec des regles de pare-feu.
 
-pfSense a :
+Il a aussi une interface Tailscale pour l'administration distante.
 
-- une interface WAN ;
-- une interface LAN ;
-- une interface Tailscale ;
-- du NAT pour que les machines internes sortent sur Internet ;
-- des regles de pare-feu pour filtrer les acces.
+L'architecture reseau actuelle est simple :
 
-Ensuite, j'ai installe un Windows Server nomme :
+- `vmbr0` correspond au reseau maison / WAN ;
+- `vmbr1` correspond au reseau interne YOps ;
+- pfSense relie les deux.
+
+Phrase simple :
+
+```text
+J'ai separe le reseau maison du reseau de lab. Les VMs internes ne sont pas directement dans le reseau de ma box, elles passent par pfSense.
+```
+
+## Pourquoi Tailscale
+
+J'ai choisi Tailscale pour l'acces distant.
+
+Tailscale permet de se connecter aux machines autorisees sans ouvrir directement les services sur Internet.  
+Dans mon cas, je peux administrer Proxmox et pfSense a distance, tout en gardant les interfaces sensibles non exposees publiquement.
+
+Phrase simple :
+
+```text
+Tailscale remplace un VPN classique dans mon lab. C'est plus simple a mettre en place, et ca correspond bien a une approche Zero Trust.
+```
+
+Points importants :
+
+- chaque machine Tailscale a une IP en `100.x.x.x` ;
+- seuls les appareils autorises peuvent rejoindre le tailnet ;
+- l'administration reste possible meme a distance ;
+- on evite d'exposer Proxmox ou pfSense directement sur Internet.
+
+## Windows Server et Active Directory
+
+Le serveur Windows principal s'appelle :
 
 ```text
 YOPS-DC01
 ```
 
-Il a l'adresse :
-
-```text
-10.10.10.10
-```
-
-Et il gere le domaine :
+Il gere le domaine :
 
 ```text
 yops.local
 ```
 
-J'ai aussi ajoute :
-
-- un poste Windows client : `YOPS-WIN01` ;
-- un serveur web Linux : `YOPS-WEB01` ;
-- un serveur base de donnees : `YOPS-DB01` ;
-- un serveur de supervision : `YOPS-MON01`.
-
-## Active Directory
-
-Sur Windows Server, j'ai installe :
+Sur ce serveur, j'ai installe :
 
 - Active Directory ;
 - DNS ;
-- la gestion des fichiers ;
-- les GPO.
+- le service de fichiers ;
+- la gestion des GPO.
 
-J'ai cree plusieurs groupes pour representer les services de l'entreprise :
+Phrase simple :
 
-- Direction ;
-- Commercial ;
-- SOC ;
-- Admin/RH/Juridique ;
-- IT Support ;
-- Clients.
+```text
+Windows Server sert de base pour l'identite de l'entreprise. C'est lui qui gere les comptes, les groupes, les droits et les postes du domaine.
+```
 
-J'ai aussi cree des utilisateurs de test, par exemple :
+## Organisation Active Directory
 
-- Alice Martin pour la Direction ;
-- Sarah Diallo pour le SOC ;
-- Nabil Moreau pour l'IT Support.
+J'ai cree une organisation simple :
 
-Le poste client `YOPS-WIN01` est joint au domaine. J'ai teste une connexion avec :
+- une OU pour les utilisateurs ;
+- une OU pour les ordinateurs ;
+- une OU pour les serveurs ;
+- une OU pour les groupes ;
+- une OU pour les comptes de service.
+
+Groupes principaux :
+
+- `GG_Direction`
+- `GG_Commercial`
+- `GG_SOC`
+- `GG_Admin_RH_Juridique`
+- `GG_IT_Support`
+- `GG_Clients_Portal`
+
+Utilisateurs de demonstration :
+
+| Utilisateur | Login | Groupe |
+|---|---|---|
+| Alice Martin | `alice.martin` | Direction |
+| Hugo Bernard | `hugo.bernard` | Commercial |
+| Sarah Diallo | `sarah.diallo` | SOC |
+| Lea Robert | `lea.robert` | Admin/RH/Juridique |
+| Nabil Moreau | `nabil.moreau` | IT Support |
+| Client Demo | `client.demo` | Portail client |
+
+Phrase simple :
+
+```text
+Je n'attribue pas les droits directement aux utilisateurs. Je les attribue aux groupes. C'est plus propre et plus facile a maintenir.
+```
+
+## Poste client Windows
+
+J'ai ajoute un poste client Windows :
+
+```text
+YOPS-WIN01
+```
+
+Ce poste est joint au domaine `yops.local`.
+
+J'ai teste une connexion avec :
 
 ```text
 YOPS\sarah.diallo
 ```
 
-Cela prouve qu'un utilisateur du domaine peut se connecter sur un poste de l'entreprise.
+Phrase simple :
 
-## Droits fichiers
+```text
+Ce test prouve qu'un utilisateur du domaine peut se connecter sur un poste de l'entreprise et acceder aux ressources autorisees.
+```
 
-J'ai cree des dossiers partages pour chaque service :
+## Partages et droits
 
-- Direction ;
-- Commercial ;
-- SOC ;
-- Admin-RH-Juridique ;
-- IT-Support ;
-- Public.
+J'ai cree plusieurs partages sur le serveur :
 
-Les droits sont geres avec les groupes Active Directory.
+- `Direction`
+- `Commercial`
+- `SOC`
+- `Admin-RH-Juridique`
+- `IT-Support`
+- `Public`
 
-Par exemple :
+Le principe est simple :
 
-- le SOC peut ecrire dans son dossier ;
-- le Commercial peut ecrire dans son dossier ;
-- la Direction peut lire plusieurs dossiers ;
-- les utilisateurs n'ont pas tous acces a tout.
+- chaque service a son dossier ;
+- les droits sont bases sur les groupes AD ;
+- un utilisateur n'a pas acces a tout ;
+- le dossier `Public` sert aux documents communs.
 
-Le but est de respecter le principe du moindre privilege.
+Exemple :
 
-J'ai teste avec Sarah Diallo, qui appartient au groupe SOC. Elle peut acceder au partage `SOC` et y creer un fichier.
+```text
+Sarah Diallo appartient au groupe SOC. Elle peut donc ecrire dans le partage SOC, mais elle n'est pas administratrice de tout le serveur.
+```
+
+Phrase simple :
+
+```text
+Le but est de respecter le principe du moindre privilege : chaque personne a les acces necessaires pour son travail, mais pas plus.
+```
 
 ## GPO
 
-J'ai aussi commence a mettre en place des GPO.
+Les GPO servent a appliquer des regles automatiquement aux postes du domaine.
 
-Elles servent a appliquer des regles automatiquement aux postes du domaine.
+Dans le projet, elles servent notamment a montrer :
 
-Par exemple :
+- une politique de mot de passe ;
+- le verrouillage de session ;
+- le pare-feu Windows ;
+- des regles de securite appliquees de maniere centralisee.
 
-- politique de mot de passe ;
-- verrouillage de session ;
-- restrictions utilisateur ;
-- configuration de securite des postes.
+Phrase simple :
 
-## Validation
+```text
+Les GPO evitent de configurer chaque poste a la main. On definit une regle une fois, puis elle s'applique aux machines du domaine.
+```
 
-Pour verifier que le domaine fonctionne, j'ai teste le DNS.
+## DNS
 
-Les noms importants repondent bien :
+Le DNS interne est porte par `YOPS-DC01`.
+
+Il permet de resoudre :
 
 ```text
 yops.local
 YOPS-DC01.yops.local
+portal.yops.local
 ```
 
-Et les enregistrements Active Directory sont presents.
+Phrase simple :
 
-Cela montre que le controleur de domaine est bien operationnel.
+```text
+Dans un domaine Active Directory, le DNS est essentiel. Les postes doivent pouvoir trouver le controleur de domaine pour ouvrir une session et acceder aux services.
+```
 
 ## Partie Linux
 
-J'ai aussi mis en place une partie Linux pour ne pas avoir une infrastructure uniquement Windows.
+J'ai ajoute une partie Linux pour ne pas avoir une infrastructure uniquement Windows.
 
 Il y a trois serveurs :
 
+| Serveur | Role | IP |
+|---|---|---|
+| YOPS-WEB01 | Nginx / PHP / portail intranet | `10.10.10.20` |
+| YOPS-DB01 | MariaDB | `10.10.10.21` |
+| YOPS-MON01 | Uptime Kuma | `10.10.10.30` |
+
+Phrase simple :
+
 ```text
-YOPS-WEB01 : serveur web Nginx/PHP
-YOPS-DB01  : serveur base de donnees MariaDB
-YOPS-MON01 : serveur de supervision Uptime Kuma
+Windows gere l'identite et les fichiers. Linux gere les services applicatifs : web, base de donnees et supervision.
 ```
 
-Le serveur web repond sur :
+## Portail intranet
 
-```text
-http://10.10.10.20
-```
-
-J'ai aussi ajoute un portail intranet plus propre :
+Le portail intranet est disponible ici :
 
 ```text
 http://portal.yops.local
 ```
 
-Il affiche l'etat des services, les IPs importantes, les liens utiles, les espaces equipes et un espace cyber interne.
+Il sert de page interne pour l'entreprise.
 
-Le serveur de supervision repond sur :
+Il affiche :
+
+- les acces rapides ;
+- les actualites internes ;
+- les espaces d'equipe ;
+- les operations ;
+- les services importants.
+
+Phrase simple :
 
 ```text
-http://10.10.10.30:3001
+Ce portail montre que le serveur web fonctionne et donne un point d'entree plus realiste pour une entreprise.
 ```
 
-La base MariaDB contient une base de demonstration :
+## Base de donnees
+
+La base MariaDB est sur :
+
+```text
+YOPS-DB01 - 10.10.10.21
+```
+
+Une base de demonstration existe :
 
 ```text
 yops_app
 ```
 
-L'objectif est de montrer une architecture mixte : Windows pour l'identite et Linux pour les services applicatifs.
+Phrase simple :
 
-## Sauvegardes
+```text
+La base de donnees est separee du serveur web. C'est plus propre qu'une architecture ou tout est installe sur la meme machine.
+```
 
-J'ai aussi mis en place une premiere sauvegarde des machines importantes dans Proxmox.
+## Supervision
 
-Les VMs sauvegardees sont :
+La supervision de disponibilite est faite avec Uptime Kuma :
 
+```text
+http://10.10.10.30:3001
+```
+
+Elle permet de surveiller :
+
+- pfSense ;
 - le controleur de domaine ;
-- le serveur web ;
-- le serveur de base de donnees ;
-- le serveur de supervision ;
-- le poste client Windows.
+- le portail web ;
+- la base de donnees ;
+- le serveur de supervision.
 
 Phrase simple :
 
 ```text
-L'objectif est de pouvoir restaurer l'infrastructure en cas d'erreur ou de panne. Pour le projet, j'ai donc prevu une strategie de sauvegarde avec Proxmox, la base de donnees et la configuration pfSense.
+Uptime Kuma me permet de voir rapidement si un service important est disponible ou non.
 ```
 
-## Petite demo a montrer
+## SOC et Wazuh
 
-Pendant l'oral, je peux montrer rapidement que l'infrastructure fonctionne avec quelques commandes simples.
+J'ai aussi ajoute une brique SOC avec Wazuh :
 
-### 1. Montrer la configuration reseau du serveur
+```text
+https://10.10.10.25
+```
 
-Sur `YOPS-DC01`, dans PowerShell :
+Wazuh ne fait pas la meme chose qu'Uptime Kuma.
+
+- Uptime Kuma verifie si un service repond.
+- Wazuh surveille les machines, les evenements de securite, les fichiers, la configuration et les alertes.
+
+Agents actifs dans Wazuh :
+
+| Agent | IP | Role |
+|---|---|---|
+| YOPS-WEB01 | `10.10.10.20` | Serveur web Linux |
+| YOPS-DB01 | `10.10.10.21` | Serveur base de donnees |
+| YOPS-MON01 | `10.10.10.30` | Serveur supervision |
+| YOPS-DC01 | `10.10.10.10` | Controleur de domaine Windows |
+| YOPS-WIN01 | `10.10.10.50` | Poste client Windows |
+
+Phrase simple :
+
+```text
+Uptime Kuma me dit si les services sont disponibles. Wazuh me donne une vision securite sur les serveurs et les postes.
+```
+
+Phrase a dire si le jury demande pourquoi c'est utile :
+
+```text
+Pour une entreprise cyber, ce n'est pas suffisant de savoir qu'un serveur repond. Il faut aussi surveiller ce qui se passe dessus : connexions, changements de fichiers, vulnerabilites, evenements Windows et alertes de securite.
+```
+
+## Sauvegardes
+
+J'ai realise une sauvegarde Proxmox des VMs importantes :
+
+- `YOPS-DC01`
+- `YOPS-WEB01`
+- `YOPS-DB01`
+- `YOPS-MON01`
+- `YOPS-WIN01`
+
+Emplacement :
+
+```text
+/var/lib/vz/dump/yops
+```
+
+Phrase simple :
+
+```text
+L'objectif est de pouvoir restaurer rapidement une machine si une erreur ou une panne arrive pendant le projet.
+```
+
+## Cloud hybride
+
+Le projet tourne localement sur Proxmox.  
+Pour la partie cloud/hybride, j'ai documente une strategie simple : garder les services en local, mais envoyer une copie chiffree des sauvegardes vers un stockage cloud.
+
+Exemples possibles :
+
+- Azure Blob Storage ;
+- bucket S3 ;
+- Backblaze B2 ;
+- autre stockage externe.
+
+Phrase simple :
+
+```text
+Je ne migre pas toute l'infrastructure dans le cloud. Je garde les services localement, et j'utilise le cloud comme securite supplementaire pour les sauvegardes.
+```
+
+## Budget infrastructure
+
+Pour le lab, le cout est faible car j'utilise du materiel deja disponible.
+
+Pour une petite entreprise, j'ai prevu un budget cible avec :
+
+- un serveur de virtualisation ;
+- un firewall ;
+- un switch manageable ;
+- un stockage de sauvegarde ;
+- un onduleur.
+
+Budget estime :
+
+```text
+Budget minimum : environ 1 600 EUR
+Budget confortable : environ 3 500 EUR
+```
+
+Phrase simple :
+
+```text
+Le budget montre ce qu'il faudrait prevoir pour passer du lab a une petite infrastructure reelle.
+```
+
+## VLAN et segmentation
+
+Point important : dans le lab actuel, je n'ai pas mis en place de vrais VLAN.
+
+Le reseau interne actuel est :
+
+```text
+10.10.10.0/24
+```
+
+Pourquoi ?
+
+```text
+J'ai garde un LAN unique pour stabiliser la demonstration. L'Active Directory, le DNS, les partages, le portail et la supervision fonctionnent. Changer les VLAN juste avant l'oral aurait ajoute un risque inutile.
+```
+
+Par contre, j'ai prevu une architecture cible :
+
+| VLAN | Nom | Reseau | Usage |
+|---:|---|---|---|
+| 10 | SERVERS | `10.10.10.0/24` | AD, DNS, DB, monitoring |
+| 20 | CLIENTS | `10.10.20.0/24` | Postes utilisateurs |
+| 30 | ADMIN | `10.10.30.0/24` | Administration |
+| 40 | DMZ | `10.10.40.0/24` | Portail web |
+| 50 | GUEST | `10.10.50.0/24` | Invites / tests |
+
+Phrase simple :
+
+```text
+Dans le lab, le reseau est simple et stable. En production, je separerais les serveurs, les clients, l'administration et la DMZ avec des VLAN et des regles pfSense.
+```
+
+## Securite globale
+
+Les mesures de securite principales sont :
+
+- pfSense comme pare-feu central ;
+- Tailscale pour l'acces distant ;
+- aucun service sensible expose directement sur Internet ;
+- Active Directory pour gerer les comptes ;
+- groupes AD pour gerer les droits ;
+- GPO pour les postes Windows ;
+- UFW et Fail2ban sur Linux ;
+- sauvegardes Proxmox ;
+- supervision de disponibilite avec Uptime Kuma ;
+- supervision securite avec Wazuh.
+
+Phrase simple :
+
+```text
+La securite du projet repose sur plusieurs couches : pare-feu, acces distant controle, gestion des identites, droits par groupes, supervision et sauvegardes.
+```
+
+## Ce que je montre pendant la demo
+
+Je ne suis pas oblige de tout montrer. Le plus important est de montrer rapidement que l'infrastructure fonctionne.
+
+### 1. Le schema reseau
+
+Montrer le schema GitHub.
+
+Phrase :
+
+```text
+Ici, on voit le reseau maison, pfSense, le LAN YOps, les serveurs internes et Tailscale pour l'administration distante.
+```
+
+### 2. Le domaine Windows
+
+Sur `YOPS-DC01` :
 
 ```powershell
 ipconfig /all
 ```
 
-Ce que je montre :
-
-- le nom du serveur ;
-- l'adresse IP `10.10.10.10` ;
-- le DNS configure sur le serveur ;
-- le domaine `yops.local`.
-
-Je peux expliquer :
-
-```text
-Ici, on voit que le serveur est bien dans le reseau interne YOps et qu'il utilise le DNS du domaine.
-```
-
-### 2. Montrer que le DNS du domaine fonctionne
-
-Dans PowerShell :
+Puis :
 
 ```powershell
 nslookup yops.local
-nslookup YOPS-DC01.yops.local
-nslookup -type=SRV _ldap._tcp.dc._msdcs.yops.local
+nslookup portal.yops.local
 ```
 
-Ce que je montre :
-
-- `yops.local` repond ;
-- `YOPS-DC01.yops.local` pointe vers `10.10.10.10` ;
-- l'enregistrement LDAP prouve que le controleur de domaine est trouve.
-
-Phrase simple :
+Phrase :
 
 ```text
-Ces tests montrent que le DNS Active Directory fonctionne et que les machines pourront trouver le controleur de domaine.
+Le serveur est bien dans le reseau YOps et le DNS interne resout les noms du domaine.
 ```
 
-### 3. Montrer les utilisateurs crees
-
-Dans PowerShell :
+### 3. Les utilisateurs et groupes
 
 ```powershell
 Get-ADUser -Filter * -SearchBase "OU=Users,OU=YOps,DC=yops,DC=local" | Select Name,SamAccountName,Enabled
 ```
 
-Ce que je montre :
-
-- les utilisateurs de demonstration ;
-- leurs identifiants ;
-- le fait que les comptes sont actifs.
-
-Exemple :
-
-```text
-Alice Martin est dans la Direction, Sarah Diallo dans le SOC, Nabil Moreau dans l'IT Support.
-```
-
-### 4. Montrer les groupes
-
-Dans PowerShell :
-
 ```powershell
 Get-ADGroup -Filter * -SearchBase "OU=Groups,OU=YOps,DC=yops,DC=local" | Select Name
 ```
 
-Ce que je montre :
-
-- les groupes de securite ;
-- chaque groupe correspond a un service de l'entreprise.
-
-Phrase simple :
+Phrase :
 
 ```text
-Les droits ne sont pas donnes directement aux utilisateurs. Ils passent par des groupes, ce qui est plus propre et plus facile a administrer.
+On voit les utilisateurs de l'entreprise et les groupes qui servent a gerer les droits.
 ```
 
-### 5. Montrer les membres d'un groupe
+### 4. Les partages
 
-Dans PowerShell :
-
-```powershell
-Get-ADGroupMember "GG_SOC" | Select Name,SamAccountName
-```
-
-Ce que je montre :
-
-- les utilisateurs du groupe SOC ;
-- cela permet d'expliquer la gestion par role.
-
-### 6. Montrer les partages fichiers
-
-Le plus simple est de le montrer dans l'explorateur Windows.
-
-Dans la barre d'adresse de l'explorateur :
+Dans l'explorateur Windows :
 
 ```text
 \\YOPS-DC01
 ```
 
-Ou directement :
+Phrase :
 
 ```text
-\\YOPS-DC01\Public
-\\YOPS-DC01\SOC
-\\YOPS-DC01\Direction
+Les dossiers sont centralises sur le serveur et les droits dependent des groupes Active Directory.
 ```
 
-Ce que je montre :
+### 5. Le portail intranet
 
-- les dossiers partages de l'entreprise ;
-- chaque service a son espace ;
-- les partages sont centralises sur le serveur Windows.
-
-Phrase simple :
-
-```text
-Ici, on voit les partages crees sur le serveur. Chaque service a son dossier, et les droits sont geres par les groupes Active Directory.
-```
-
-Si je veux aussi le montrer en PowerShell :
-
-```powershell
-Get-SmbShare | Where-Object {$_.Name -in "Direction","Commercial","SOC","Admin-RH-Juridique","IT-Support","Public"} | Select Name,Path
-```
-
-### 7. Montrer les GPO
-
-Dans PowerShell :
-
-```powershell
-Get-GPO -All | Select DisplayName
-```
-
-Ce que je montre :
-
-- les GPO par defaut ;
-- les GPO YOps ajoutees.
-
-Phrase simple :
-
-```text
-Les GPO permettent d'appliquer automatiquement des regles aux postes du domaine, par exemple la politique de mot de passe ou des restrictions de securite.
-```
-
-### 8. Montrer Tailscale depuis mon poste
-
-Sur mon PC Linux :
-
-```bash
-tailscale status
-tailscale ping 100.94.68.82
-```
-
-Ce que je montre :
-
-- pfSense est joignable via Tailscale ;
-- l'administration passe par un acces securise ;
-- les services ne sont pas exposes directement sur Internet.
-
-Phrase simple :
-
-```text
-Tailscale me permet d'administrer l'infrastructure a distance sans ouvrir pfSense ou Proxmox publiquement sur Internet.
-```
-
-### 9. Montrer le portail intranet YOps
-
-Sur mon PC ou dans un navigateur :
-
-```bash
-curl -I http://portal.yops.local
-```
-
-Ou ouvrir :
+Dans un navigateur :
 
 ```text
 http://portal.yops.local
 ```
 
-Ce que je montre :
-
-- le serveur Linux repond ;
-- Nginx et PHP fonctionnent ;
-- le portail intranet YOps est accessible depuis le reseau interne ;
-- on voit les services, les IPs, la supervision et les liens utiles.
-
-Phrase simple :
+Phrase :
 
 ```text
-Ce portail sert de point d'entree interne pour YOps. Il montre que le serveur web Linux fonctionne et centralise les informations utiles de l'infrastructure.
+Le portail intranet est heberge sur Linux et sert de point d'entree interne.
 ```
 
-### 10. Montrer la base de donnees
-
-Depuis Proxmox, via l'agent QEMU :
-
-```bash
-qm guest exec 220 -- bash -lc 'mysql -h 10.10.10.21 -u yops_app -pYOps_DB_2026! -e "SHOW DATABASES;"'
-```
-
-Ce que je montre :
-
-- le serveur web peut joindre le serveur de base de donnees ;
-- la base `yops_app` existe.
-
-Phrase simple :
-
-```text
-Le serveur web communique avec la base de donnees MariaDB. C'est le socle qui servira pour l'application web.
-```
-
-### 11. Montrer la supervision
+### 6. La supervision
 
 Dans un navigateur :
 
@@ -450,18 +588,29 @@ Dans un navigateur :
 http://10.10.10.30:3001
 ```
 
-Ce que je montre :
-
-- Uptime Kuma est lance ;
-- il permettra de surveiller pfSense, le serveur web, le serveur DB et le controleur de domaine.
-
-Phrase simple :
+Phrase :
 
 ```text
-La supervision permet de voir rapidement si un service important est disponible ou non.
+Ici, je peux verifier rapidement l'etat des services principaux.
 ```
 
-### 12. Montrer les sauvegardes
+### 7. Le SOC Wazuh
+
+Dans un navigateur :
+
+```text
+https://10.10.10.25
+```
+
+Montrer `Endpoints`.
+
+Phrase :
+
+```text
+Ici, on voit les agents Wazuh actifs sur les serveurs Linux, le controleur de domaine et le poste Windows. Cela montre que les machines remontent leurs informations de securite au SOC.
+```
+
+### 8. Les sauvegardes
 
 Sur Proxmox :
 
@@ -469,42 +618,324 @@ Sur Proxmox :
 ls -lh /var/lib/vz/dump/yops
 ```
 
-Ce que je montre :
+Phrase :
 
-- les fichiers de sauvegarde des VMs ;
-- les logs de sauvegarde ;
-- la sauvegarde du controleur de domaine, du web, de la base, de la supervision et du client.
+```text
+On voit les sauvegardes des VMs importantes. C'est ce qui permet de restaurer en cas de probleme.
+```
+
+## Conclusion
+
+Pour resumer, j'ai mis en place une infrastructure complete de lab :
+
+- un hyperviseur Proxmox ;
+- un pare-feu pfSense ;
+- un acces distant Tailscale ;
+- un domaine Active Directory ;
+- des utilisateurs, groupes, droits et GPO ;
+- un poste Windows joint au domaine ;
+- des serveurs Linux pour le web, la base de donnees et la supervision ;
+- une brique SOC avec Wazuh et cinq agents actifs ;
+- un portail intranet ;
+- des sauvegardes ;
+- une documentation GitHub avec schema, budget, securite, cloud hybride et plan VLAN cible.
+
+Phrase de conclusion :
+
+```text
+L'infrastructure actuelle est stable et presente les bases d'un SI d'entreprise : identite, reseau, services, supervision et securite. La prochaine etape serait de pousser la segmentation VLAN, d'isoler un honeypot et de developper l'application metier YOps.
+```
+
+# Questions / Reponses possibles
+
+## Qu'est-ce que Tailscale ?
+
+Tailscale est une solution d'acces distant basee sur WireGuard.  
+Elle permet de creer un reseau prive entre des machines autorisees.
+
+Dans mon projet, je l'utilise pour administrer Proxmox et pfSense sans ouvrir leurs interfaces directement sur Internet.
+
+Reponse courte :
+
+```text
+Tailscale me permet d'acceder a mon lab a distance de maniere securisee, sans exposer les services d'administration sur le WAN.
+```
+
+## Pourquoi ne pas avoir utilise un VPN classique ?
+
+Un VPN classique fonctionne aussi, mais il demande souvent plus de configuration : ports ouverts, certificats, routage, clients VPN.
+
+Tailscale est plus simple pour un lab et plus moderne dans l'approche.  
+Il se rapproche d'une logique Zero Trust : seuls les appareils autorises peuvent se connecter.
+
+## Qu'est-ce que pfSense ?
+
+pfSense est un pare-feu/routeur open source base sur FreeBSD.
+
+Dans mon projet, il sert a :
+
+- faire passerelle du LAN YOps ;
+- faire du NAT vers Internet ;
+- filtrer les flux ;
+- administrer le reseau interne.
+
+## Quelle est la difference entre WAN et LAN ?
+
+Le WAN est le cote externe, ici le reseau maison `192.168.1.0/24`.  
+Le LAN est le reseau interne YOps `10.10.10.0/24`.
+
+pfSense est entre les deux.
+
+## Pourquoi utiliser Proxmox ?
+
+Proxmox permet de faire tourner plusieurs machines virtuelles sur une seule machine physique.
+
+C'est pratique pour un projet comme celui-ci car je peux avoir :
+
+- un pare-feu ;
+- un serveur Windows ;
+- plusieurs serveurs Linux ;
+- un client Windows ;
+- tout ca dans un seul lab.
+
+## Qu'est-ce qu'Active Directory ?
+
+Active Directory est le service Microsoft qui gere l'identite dans un domaine Windows.
+
+Il sert a gerer :
+
+- les utilisateurs ;
+- les groupes ;
+- les ordinateurs ;
+- les droits ;
+- les GPO.
+
+## Pourquoi le DNS est important dans Active Directory ?
+
+Les postes utilisent le DNS pour trouver le controleur de domaine.  
+Sans DNS correct, l'ouverture de session, les GPO et certains services du domaine peuvent ne pas fonctionner.
+
+## Qu'est-ce qu'une GPO ?
+
+Une GPO est une strategie de groupe.  
+Elle permet d'appliquer automatiquement des parametres aux postes ou aux utilisateurs du domaine.
+
+Exemples :
+
+- politique de mot de passe ;
+- verrouillage de session ;
+- pare-feu Windows ;
+- restrictions utilisateur.
+
+## Pourquoi gerer les droits avec des groupes ?
+
+Parce que c'est plus simple et plus propre.
+
+Au lieu de donner les droits utilisateur par utilisateur, je donne les droits a un groupe.  
+Ensuite, j'ajoute ou je retire les personnes du groupe.
+
+## Qu'est-ce que le principe du moindre privilege ?
+
+Cela veut dire qu'un utilisateur doit avoir uniquement les droits necessaires pour faire son travail.
+
+Il ne doit pas avoir acces a tout par defaut.
+
+## Pourquoi avoir mis du Linux ?
+
+Le sujet ne devait pas etre uniquement Windows.  
+Linux est tres utilise pour les services web, les bases de donnees et la supervision.
+
+Dans mon projet :
+
+- Linux heberge le portail intranet ;
+- Linux heberge MariaDB ;
+- Linux heberge Uptime Kuma.
+
+## Pourquoi separer le web et la base de donnees ?
+
+C'est plus propre et plus proche d'une vraie architecture.
+
+Le serveur web affiche l'application ou le portail.  
+Le serveur DB stocke les donnees.
+
+Si un jour on veut securiser davantage, on peut autoriser seulement le serveur web a parler a la base.
+
+## Qu'est-ce qu'Uptime Kuma ?
+
+Uptime Kuma est un outil de supervision simple.
+
+Il permet de verifier si des services sont disponibles :
+
+- ping ;
+- HTTP ;
+- port TCP ;
+- statut d'un service.
+
+Dans mon projet, il sert a montrer rapidement l'etat de l'infrastructure.
+
+## Qu'est-ce que Wazuh ?
+
+Wazuh est une solution de securite de type SIEM/XDR.
+
+Elle permet de centraliser des informations de securite venant des serveurs et des postes.
+
+Dans mon projet, Wazuh surveille :
+
+- les serveurs Linux ;
+- le controleur de domaine Windows ;
+- le poste client Windows.
+
+Reponse courte :
+
+```text
+Wazuh me sert de mini-SOC. Il centralise les alertes de securite des machines importantes du lab.
+```
+
+## Quelle est la difference entre Uptime Kuma et Wazuh ?
+
+Uptime Kuma surveille surtout la disponibilite.
+
+Exemple :
+
+```text
+Est-ce que le portail web repond ? Est-ce que la base de donnees ecoute sur son port ?
+```
+
+Wazuh surveille la securite des machines.
+
+Exemple :
+
+```text
+Est-ce qu'il y a des evenements suspects ? Des changements de fichiers ? Des problemes de configuration ? Des alertes sur un poste ?
+```
+
+Reponse courte :
+
+```text
+Uptime Kuma me dit si le service est joignable. Wazuh me dit ce qui se passe sur la machine.
+```
+
+## Pourquoi avoir mis un SOC dans le projet ?
+
+Parce que l'entreprise fictive est une entreprise de cybersecurite.
+
+Donc il est logique d'avoir une brique qui centralise les alertes et donne une vision securite de l'infrastructure.
+
+Je ne dis pas que c'est un SOC complet comme dans une grande entreprise, mais c'est une base realiste :
+
+- les agents sont installes ;
+- les machines remontent dans Wazuh ;
+- les alertes sont centralisees ;
+- on peut ensuite ajouter des regles, de la detection et un honeypot.
+
+## C'est quoi un agent Wazuh ?
+
+Un agent Wazuh est un petit programme installe sur une machine surveillee.
+
+Il envoie les informations au serveur Wazuh.
+
+Dans mon projet, les agents actifs sont :
+
+```text
+YOPS-WEB01
+YOPS-DB01
+YOPS-MON01
+YOPS-DC01
+YOPS-WIN01
+```
+
+## Pourquoi garder le honeypot pour la suite ?
+
+Le honeypot est interessant, mais il doit etre isole proprement.
+
+Si je le mets directement dans le LAN principal, ce n'est pas ideal.  
+Un honeypot est fait pour attirer des comportements suspects, donc il faut eviter qu'il puisse parler librement au reste du SI.
+
+La prochaine etape propre serait :
+
+- creer un reseau honeypot separe ;
+- le connecter a pfSense ;
+- bloquer l'acces vers le LAN interne ;
+- autoriser seulement les flux necessaires vers Wazuh ;
+- installer un honeypot type Cowrie.
+
+Reponse courte :
+
+```text
+Le honeypot a du sens s'il est isole. Sinon il ajoute du risque sans apporter une vraie architecture de securite.
+```
+
+## Pourquoi ne pas avoir mis de vrais VLAN ?
+
+Je ne les ai pas mis techniquement pour ne pas casser le lab avant l'oral.
+
+L'AD, le DNS, les partages, le portail et la supervision fonctionnent deja.  
+Changer les VLAN aurait demande de modifier les IP, les regles pfSense, le DNS et les tests.
+
+J'ai donc documente un plan VLAN cible, qui serait la prochaine etape propre.
+
+## C'est quoi une DMZ ?
+
+Une DMZ est une zone reseau separee pour les services plus exposes, par exemple un serveur web.
+
+L'idee est d'eviter qu'un serveur web compromis donne directement acces au reseau interne complet.
+
+## Pourquoi parler de cloud hybride ?
+
+Parce que le sujet demande une reflexion cloud ou hybride.
+
+Dans mon choix, les services restent locaux sur Proxmox, mais les sauvegardes peuvent etre copiees dans un stockage cloud.
+
+C'est une approche simple et realiste pour une petite structure.
+
+## Qu'est-ce que RPO et RTO ?
+
+RPO : combien de donnees on accepte de perdre.  
+RTO : combien de temps on accepte d'attendre avant que le service revienne.
+
+Exemple :
+
+```text
+Si je sauvegarde une fois par jour, mon RPO est d'environ 24 heures.
+```
+
+## Pourquoi faire des sauvegardes Proxmox ?
+
+Parce qu'en cas d'erreur, je peux restaurer une VM complete.
+
+C'est utile pour :
+
+- le controleur de domaine ;
+- le serveur web ;
+- la base de donnees ;
+- la supervision ;
+- le poste client.
+
+## Qu'est-ce qui se passe si pfSense tombe ?
+
+Le LAN interne perd sa passerelle vers Internet.  
+Les machines internes peuvent encore exister, mais elles ne sortent plus correctement.
+
+Par contre, comme Proxmox a aussi Tailscale, je peux toujours reprendre la main sur l'hyperviseur pour depanner.
+
+## Pourquoi avoir un budget infrastructure ?
+
+Le budget permet de montrer que le projet n'est pas seulement technique.  
+Il faut aussi savoir estimer le materiel necessaire pour une vraie entreprise.
+
+Dans mon cas, j'ai estime un budget minimum et un budget plus confortable.
+
+## Quelles sont les limites du projet aujourd'hui ?
+
+Les limites principales sont :
+
+- pas encore de VLAN reel ;
+- pas encore de reverse proxy HTTPS ;
+- cloud hybride documente mais pas de compte cloud branche ;
+- l'application metier YOps reste a developper.
 
 Phrase simple :
 
 ```text
-Ici, on voit les sauvegardes Proxmox des machines importantes. Cela permet de restaurer rapidement un serveur si un probleme arrive.
+Le socle infrastructure est en place. Les prochaines etapes seraient la segmentation VLAN, HTTPS/reverse proxy et le developpement de l'application metier.
 ```
-
-## Prochaines etapes
-
-L'infrastructure de base est maintenant en place.
-
-La prochaine grosse etape est la partie developpement web :
-
-- creation de l'application YOps ;
-- gestion des clients ;
-- gestion des audits ;
-- gestion des vulnerabilites ;
-- tableaux de bord et statistiques.
-
-## Conclusion
-
-Pour resumer, j'ai deja mis en place la base de l'infrastructure YOps :
-
-- le routage et le pare-feu avec pfSense ;
-- l'acces distant avec Tailscale ;
-- le domaine Windows `yops.local` ;
-- les groupes, utilisateurs, partages et GPO ;
-- un client Windows joint au domaine ;
-- un serveur web Linux ;
-- un serveur base de donnees ;
-- un serveur de supervision ;
-- une premiere sauvegarde des VMs.
-
-L'infrastructure est prete pour accueillir l'application web.

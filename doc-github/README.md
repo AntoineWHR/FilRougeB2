@@ -24,9 +24,16 @@ L'infrastructure repose sur :
 - pfSense pour le pare-feu, le NAT et le routage ;
 - Tailscale pour l'administration distante securisee ;
 - Windows Server pour Active Directory, DNS, GPO et fichiers ;
-- Linux pour le portail intranet, la base MariaDB et la supervision Uptime Kuma.
+- Linux pour le portail intranet, la base MariaDB et la supervision Uptime Kuma ;
+- Wazuh pour la supervision securite avec agents sur les serveurs et postes.
 
-Point important : le lab actuel reste en LAN unique pour eviter de casser les services avant l'oral. La segmentation VLAN est documentee comme architecture cible.
+Etat actuel important :
+
+- Active Directory, DNS, partages et GPO sont operationnels ;
+- le portail intranet, MariaDB et Uptime Kuma sont operationnels ;
+- Wazuh contient cinq agents actifs : `YOPS-WEB01`, `YOPS-DB01`, `YOPS-MON01`, `YOPS-DC01`, `YOPS-WIN01`.
+
+Point important : le lab actuel reste en LAN unique pour eviter de casser les services avant l'oral. La segmentation VLAN est documentee comme architecture cible, avec une future isolation du honeypot.
 
 L'etat detaille du projet est disponible dans le fichier :
 
