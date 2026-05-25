@@ -240,10 +240,24 @@ Dans le projet, elles servent notamment a montrer :
 - le pare-feu Windows ;
 - des regles de securite appliquees de maniere centralisee.
 
+GPO supplementaires retenues pour rendre la partie Windows plus professionnelle :
+
+- **YOPS - Verrouillage session** : verrouillage automatique apres inactivite ;
+- **YOPS - Audit securite** : journalisation des connexions, echecs et changements de comptes ;
+- **YOPS - Defender baseline** : activation et durcissement de Microsoft Defender ;
+- **YOPS - Restrictions USB** : blocage des supports amovibles pour reduire les risques d'exfiltration ;
+- **YOPS - Bannier connexion** : message legal avant ouverture de session.
+
 Phrase simple :
 
 ```text
 Les GPO evitent de configurer chaque poste a la main. On definit une regle une fois, puis elle s'applique aux machines du domaine.
+```
+
+Phrase a dire au jury :
+
+```text
+J'ai separe les GPO par theme. C'est plus lisible qu'une seule grosse GPO, et en entreprise c'est plus simple a maintenir ou a desactiver si une regle pose probleme.
 ```
 
 ## DNS
@@ -726,6 +740,27 @@ Exemples :
 - verrouillage de session ;
 - pare-feu Windows ;
 - restrictions utilisateur.
+
+Dans mon projet, les GPO servent surtout a montrer un durcissement de base :
+
+- verrouillage de session ;
+- audit des evenements ;
+- Microsoft Defender ;
+- restrictions USB ;
+- pare-feu Windows.
+
+## Pourquoi creer plusieurs GPO au lieu d'une seule ?
+
+C'est plus propre.
+
+Si toutes les regles sont dans une seule GPO, c'est plus difficile a diagnostiquer.  
+En separant par theme, je peux comprendre rapidement quelle GPO fait quoi.
+
+Reponse courte :
+
+```text
+Je separe les GPO par role pour faciliter la lecture, le depannage et l'evolution.
+```
 
 ## Pourquoi gerer les droits avec des groupes ?
 

@@ -190,10 +190,15 @@ Test realise :
 
 ### GPO
 
-GPO creees :
+GPO creees ou retenues pour le durcissement :
 
 - `YOPS - Securite postes`
 - `YOPS - Pare-feu Windows`
+- `YOPS - Verrouillage session`
+- `YOPS - Audit securite`
+- `YOPS - Defender baseline`
+- `YOPS - Restrictions USB`
+- `YOPS - Bannier connexion`
 
 Politique de mot de passe configuree :
 
@@ -201,6 +206,14 @@ Politique de mot de passe configuree :
 - complexite activee ;
 - verrouillage apres plusieurs echecs ;
 - historique de mots de passe.
+
+Objectif des GPO supplementaires :
+
+- verrouiller les postes apres inactivite ;
+- activer une journalisation de securite exploitable ;
+- renforcer Microsoft Defender ;
+- limiter les supports amovibles ;
+- afficher une banniere de connexion pour rappeler le cadre d'utilisation.
 
 ### Client Windows - YOPS-WIN01
 

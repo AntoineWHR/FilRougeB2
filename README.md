@@ -133,6 +133,22 @@ Partages crees sur `YOPS-DC01` :
 
 Les droits sont geres par groupes Active Directory et appliques au niveau NTFS.
 
+### GPO
+
+GPO presentes ou retenues pour le durcissement Windows :
+
+| GPO | Objectif |
+|---|---|
+| `YOPS - Securite postes` | Baseline de securite des postes |
+| `YOPS - Pare-feu Windows` | Activation et gestion du pare-feu Windows |
+| `YOPS - Verrouillage session` | Verrouillage automatique apres inactivite |
+| `YOPS - Audit securite` | Journalisation des connexions, echecs et changements de comptes |
+| `YOPS - Defender baseline` | Activation de Microsoft Defender et protection temps reel |
+| `YOPS - Restrictions USB` | Blocage des supports amovibles |
+| `YOPS - Bannier connexion` | Message legal avant ouverture de session |
+
+Les GPO sont separees par theme pour faciliter la lecture et le depannage.
+
 ## Services Linux
 
 | Serveur | Service | Validation |

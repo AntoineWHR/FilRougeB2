@@ -81,6 +81,16 @@ Mesures retenues :
 - droits utilisateurs separes des droits admin ;
 - configuration centralisee depuis le controleur de domaine.
 
+GPO supplementaires retenues :
+
+| GPO | Role securite |
+|---|---|
+| `YOPS - Verrouillage session` | Reduit le risque de session ouverte sans surveillance |
+| `YOPS - Audit securite` | Ameliore la tracabilite des connexions et changements sensibles |
+| `YOPS - Defender baseline` | Active la protection de base Microsoft Defender |
+| `YOPS - Restrictions USB` | Limite les risques d'exfiltration ou d'introduction de fichiers |
+| `YOPS - Bannier connexion` | Rappelle le cadre d'utilisation du SI |
+
 ## Serveurs Linux
 
 Les serveurs Linux sont utilises pour le web, la base de donnees et la supervision.
