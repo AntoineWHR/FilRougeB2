@@ -171,6 +171,19 @@ VMs sauvegardees :
 - `YOPS-MON01`
 - `YOPS-WIN01`
 
+## Complements pour la grille INFRA
+
+Pour couvrir les points qui ne sont pas uniquement techniques, j'ai ajoute des documents separes :
+
+| Sujet | Document |
+|---|---|
+| Budget materiel | [docs/09_BUDGET_INFRASTRUCTURE.md](docs/09_BUDGET_INFRASTRUCTURE.md) |
+| Politique de securite | [docs/10_POLITIQUE_SECURITE_YOPS.md](docs/10_POLITIQUE_SECURITE_YOPS.md) |
+| Cloud hybride et sauvegardes | [docs/11_CLOUD_HYBRIDE_BACKUP.md](docs/11_CLOUD_HYBRIDE_BACKUP.md) |
+| Segmentation VLAN cible | [docs/12_PLAN_SEGMENTATION_VLAN_CIBLE.md](docs/12_PLAN_SEGMENTATION_VLAN_CIBLE.md) |
+
+Ces documents ne changent pas l'infrastructure existante. Ils expliquent les choix, les limites du lab et les evolutions prevues pour une version plus proche d'une production.
+
 ## Validation rapide
 
 Exemples de verifications utilisees pendant le projet :
@@ -193,6 +206,8 @@ Get-GPO -All | Select DisplayName
 
 L'infrastructure actuelle fonctionne avec un LAN interne unique `10.10.10.0/24`.  
 Il n'y a pas encore de VLAN reel configure en production dans le lab.
+
+Ce choix est volontaire : le LAN actuel est stable, l'AD fonctionne, les partages fonctionnent et les services Linux repondent. La segmentation VLAN est donc documentee comme evolution cible plutot que faite dans l'urgence juste avant le rendu.
 
 Ameliorations prevues :
 
@@ -227,7 +242,11 @@ Ameliorations prevues :
 |   |-- 05_PLAYBOOK_SECURITE_SUPERVISION_SAUVEGARDE_CLOUD_BUDGET.md
 |   |-- 06_PLAYBOOK_DEMO_ORAL.md
 |   |-- 07_GUIDE_RAPPORT_LIVRABLES.md
-|   `-- 08_RUNBOOK_EXECUTION_INFRA_A_Z.md
+|   |-- 08_RUNBOOK_EXECUTION_INFRA_A_Z.md
+|   |-- 09_BUDGET_INFRASTRUCTURE.md
+|   |-- 10_POLITIQUE_SECURITE_YOPS.md
+|   |-- 11_CLOUD_HYBRIDE_BACKUP.md
+|   `-- 12_PLAN_SEGMENTATION_VLAN_CIBLE.md
 `-- web-intranet/
     `-- index.html
 ```
@@ -240,3 +259,7 @@ Ameliorations prevues :
 - [Playbook Windows Server AD](docs/02_PLAYBOOK_WINDOWS_SERVER_AD.md)
 - [Playbook Linux](docs/03_PLAYBOOK_LINUX_SERVERS.md)
 - [Playbook securite, supervision, sauvegarde](docs/05_PLAYBOOK_SECURITE_SUPERVISION_SAUVEGARDE_CLOUD_BUDGET.md)
+- [Budget infrastructure](docs/09_BUDGET_INFRASTRUCTURE.md)
+- [Politique de securite YOps](docs/10_POLITIQUE_SECURITE_YOPS.md)
+- [Cloud hybride et sauvegardes](docs/11_CLOUD_HYBRIDE_BACKUP.md)
+- [Plan VLAN cible](docs/12_PLAN_SEGMENTATION_VLAN_CIBLE.md)

@@ -310,6 +310,15 @@ Les prochaines etapes prevues sont :
 2. Planifier automatiquement les sauvegardes Proxmox.
 3. Developper ensuite l'application web YOps.
 
+Des complements ont ete ajoutes pour couvrir les points de la grille qui ne demandent pas forcement de casser l'infra existante :
+
+- budget materiel ;
+- politique de securite ;
+- strategie cloud hybride / backup externe ;
+- plan de segmentation VLAN cible.
+
+La segmentation VLAN n'est pas appliquee techniquement dans le lab actuel. C'est volontaire : le LAN unique est stable et permet de presenter AD, DNS, fichiers, Linux, supervision et sauvegardes sans risquer de casser la demonstration.
+
 ## 6. Validation actuelle
 
 Etat actuel :
