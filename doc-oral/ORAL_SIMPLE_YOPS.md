@@ -72,6 +72,12 @@ Phrase simple :
 pfSense se place entre le reseau interne YOps et le reseau maison. Les serveurs et le poste client sont dans le LAN interne, et sortent vers Internet en passant par pfSense.
 ```
 
+Ce que je montre :
+
+- le schema reseau dans le README GitHub ;
+- les IPs principales ;
+- le fait que tout le LAN YOps passe par `10.10.10.1`.
+
 ## Reseau et pfSense
 
 pfSense a trois roles principaux dans mon projet :
@@ -94,6 +100,19 @@ Phrase simple :
 J'ai separe le reseau maison du reseau de lab. Les VMs internes ne sont pas directement dans le reseau de ma box, elles passent par pfSense.
 ```
 
+Commande possible depuis mon PC ou Proxmox :
+
+```bash
+ping -c 3 10.10.10.1
+ping -c 3 10.10.10.10
+```
+
+Ce que je dis :
+
+```text
+Ces tests montrent que la passerelle pfSense et le controleur de domaine sont joignables depuis mon environnement d'administration.
+```
+
 ## Pourquoi Tailscale
 
 J'ai choisi Tailscale pour l'acces distant.
@@ -113,6 +132,19 @@ Points importants :
 - seuls les appareils autorises peuvent rejoindre le tailnet ;
 - l'administration reste possible meme a distance ;
 - on evite d'exposer Proxmox ou pfSense directement sur Internet.
+
+Commande possible depuis mon PC :
+
+```bash
+tailscale status
+tailscale ping 100.94.68.82
+```
+
+Ce que je dis :
+
+```text
+Ici, je montre que pfSense est joignable via Tailscale. L'administration ne depend donc pas d'une exposition directe sur Internet.
+```
 
 ## Windows Server et Active Directory
 
@@ -139,6 +171,19 @@ Phrase simple :
 
 ```text
 Windows Server sert de base pour l'identite de l'entreprise. C'est lui qui gere les comptes, les groupes, les droits et les postes du domaine.
+```
+
+Commande a montrer sur `YOPS-DC01` :
+
+```powershell
+Get-ADDomain
+Get-ADDomainController
+```
+
+Ce que je dis :
+
+```text
+Ces commandes prouvent que le domaine yops.local existe et que YOPS-DC01 est bien controleur de domaine.
 ```
 
 ## Organisation Active Directory
@@ -177,6 +222,22 @@ Phrase simple :
 Je n'attribue pas les droits directement aux utilisateurs. Je les attribue aux groupes. C'est plus propre et plus facile a maintenir.
 ```
 
+Commandes a montrer :
+
+```powershell
+Get-ADUser -Filter * -SearchBase "OU=Users,OU=YOps,DC=yops,DC=local" | Select Name,SamAccountName,Enabled
+```
+
+```powershell
+Get-ADGroup -Filter * -SearchBase "OU=Groups,OU=YOps,DC=yops,DC=local" | Select Name
+```
+
+Ce que je dis :
+
+```text
+On voit les utilisateurs et les groupes metiers. Les droits sont ensuite rattaches aux groupes, pas aux personnes une par une.
+```
+
 ## Poste client Windows
 
 J'ai ajoute un poste client Windows :
@@ -197,6 +258,25 @@ Phrase simple :
 
 ```text
 Ce test prouve qu'un utilisateur du domaine peut se connecter sur un poste de l'entreprise et acceder aux ressources autorisees.
+```
+
+Ce que je montre :
+
+- ouvrir une session sur `YOPS-WIN01` avec `YOPS\sarah.diallo` ;
+- ouvrir l'explorateur ;
+- acceder a `\\YOPS-DC01`.
+
+Commande possible sur le poste client :
+
+```powershell
+whoami
+gpresult /r
+```
+
+Ce que je dis :
+
+```text
+La commande whoami montre que je suis connecte avec un compte du domaine, et gpresult permet de verifier que les politiques de groupe s'appliquent.
 ```
 
 ## Partages et droits
@@ -227,6 +307,22 @@ Phrase simple :
 
 ```text
 Le but est de respecter le principe du moindre privilege : chaque personne a les acces necessaires pour son travail, mais pas plus.
+```
+
+Commandes a montrer sur `YOPS-DC01` :
+
+```powershell
+Get-SmbShare | Where-Object {$_.Name -in "Direction","Commercial","SOC","Admin-RH-Juridique","IT-Support","Public"} | Select Name,Path
+```
+
+```powershell
+icacls C:\Shares\SOC
+```
+
+Ce que je dis :
+
+```text
+Get-SmbShare montre les partages crees. Icacls permet de montrer que les droits NTFS sont bases sur les groupes Active Directory.
 ```
 
 ## GPO
@@ -260,6 +356,22 @@ Phrase a dire au jury :
 J'ai separe les GPO par theme. C'est plus lisible qu'une seule grosse GPO, et en entreprise c'est plus simple a maintenir ou a desactiver si une regle pose probleme.
 ```
 
+Commandes a montrer :
+
+```powershell
+Get-GPO -All | Select DisplayName
+```
+
+```powershell
+gpupdate /force
+```
+
+Ce que je dis :
+
+```text
+Je montre les GPO presentes, puis gpupdate permet de forcer l'application des politiques sur une machine.
+```
+
 ## DNS
 
 Le DNS interne est porte par `YOPS-DC01`.
@@ -278,6 +390,20 @@ Phrase simple :
 Dans un domaine Active Directory, le DNS est essentiel. Les postes doivent pouvoir trouver le controleur de domaine pour ouvrir une session et acceder aux services.
 ```
 
+Commandes a montrer :
+
+```powershell
+nslookup yops.local
+nslookup YOPS-DC01.yops.local
+nslookup portal.yops.local
+```
+
+Ce que je dis :
+
+```text
+Ces tests montrent que le DNS interne resout le domaine, le controleur de domaine et le portail intranet.
+```
+
 ## Partie Linux
 
 J'ai ajoute une partie Linux pour ne pas avoir une infrastructure uniquement Windows.
@@ -294,6 +420,19 @@ Phrase simple :
 
 ```text
 Windows gere l'identite et les fichiers. Linux gere les services applicatifs : web, base de donnees et supervision.
+```
+
+Commandes possibles depuis mon PC :
+
+```bash
+curl -I http://10.10.10.20
+curl -I http://10.10.10.30:3001
+```
+
+Ce que je dis :
+
+```text
+Ces deux tests montrent que le serveur web et la supervision repondent depuis le reseau.
 ```
 
 ## Portail intranet
@@ -320,6 +459,12 @@ Phrase simple :
 Ce portail montre que le serveur web fonctionne et donne un point d'entree plus realiste pour une entreprise.
 ```
 
+Ce que je montre :
+
+- ouvrir `http://portal.yops.local` ;
+- montrer que la page ressemble a un intranet ;
+- montrer les liens utiles et les blocs de statut.
+
 ## Base de donnees
 
 La base MariaDB est sur :
@@ -338,6 +483,18 @@ Phrase simple :
 
 ```text
 La base de donnees est separee du serveur web. C'est plus propre qu'une architecture ou tout est installe sur la meme machine.
+```
+
+Commande possible depuis Proxmox :
+
+```bash
+qm guest exec 220 -- bash -lc 'mysql -h 10.10.10.21 -u yops_app -pYOps_DB_2026! -e "SHOW DATABASES;"'
+```
+
+Ce que je dis :
+
+```text
+La commande est lancee depuis le serveur web et interroge le serveur de base de donnees. Cela montre que les deux machines communiquent correctement.
 ```
 
 ## Supervision
@@ -361,6 +518,12 @@ Phrase simple :
 ```text
 Uptime Kuma me permet de voir rapidement si un service important est disponible ou non.
 ```
+
+Ce que je montre :
+
+- ouvrir `http://10.10.10.30:3001` ;
+- montrer les sondes vertes ;
+- expliquer que c'est de la supervision de disponibilite.
 
 ## SOC et Wazuh
 
@@ -397,6 +560,18 @@ Phrase a dire si le jury demande pourquoi c'est utile :
 Pour une entreprise cyber, ce n'est pas suffisant de savoir qu'un serveur repond. Il faut aussi surveiller ce qui se passe dessus : connexions, changements de fichiers, vulnerabilites, evenements Windows et alertes de securite.
 ```
 
+Ce que je montre :
+
+- ouvrir `https://10.10.10.25` ;
+- aller dans `Endpoints` ;
+- montrer les cinq agents actifs.
+
+Phrase a dire :
+
+```text
+Ici, on voit que les serveurs Linux, le controleur de domaine et le poste Windows remontent bien dans Wazuh.
+```
+
 ## Sauvegardes
 
 J'ai realise une sauvegarde Proxmox des VMs importantes :
@@ -417,6 +592,18 @@ Phrase simple :
 
 ```text
 L'objectif est de pouvoir restaurer rapidement une machine si une erreur ou une panne arrive pendant le projet.
+```
+
+Commande a montrer sur Proxmox :
+
+```bash
+ls -lh /var/lib/vz/dump/yops
+```
+
+Ce que je dis :
+
+```text
+On voit les sauvegardes des VMs principales. Ce n'est pas juste theorique : les fichiers de backup existent vraiment.
 ```
 
 ## Cloud hybride
@@ -657,7 +844,7 @@ Pour resumer, j'ai mis en place une infrastructure complete de lab :
 Phrase de conclusion :
 
 ```text
-L'infrastructure actuelle est stable et presente les bases d'un SI d'entreprise : identite, reseau, services, supervision et securite. La prochaine etape serait de pousser la segmentation VLAN, d'isoler un honeypot et de developper l'application metier YOps.
+L'infrastructure actuelle est stable et presente les bases d'un SI d'entreprise : identite, reseau, services, supervision et securite. La prochaine etape serait de pousser la segmentation VLAN, d'ajouter du HTTPS interne et de developper l'application metier YOps.
 ```
 
 # Questions / Reponses possibles
@@ -861,7 +1048,7 @@ Je ne dis pas que c'est un SOC complet comme dans une grande entreprise, mais c'
 - les agents sont installes ;
 - les machines remontent dans Wazuh ;
 - les alertes sont centralisees ;
-- on peut ensuite ajouter des regles, de la detection et un honeypot.
+- on peut ensuite ajouter des regles de detection plus avancees.
 
 ## C'est quoi un agent Wazuh ?
 
@@ -877,27 +1064,6 @@ YOPS-DB01
 YOPS-MON01
 YOPS-DC01
 YOPS-WIN01
-```
-
-## Pourquoi garder le honeypot pour la suite ?
-
-Le honeypot est interessant, mais il doit etre isole proprement.
-
-Si je le mets directement dans le LAN principal, ce n'est pas ideal.  
-Un honeypot est fait pour attirer des comportements suspects, donc il faut eviter qu'il puisse parler librement au reste du SI.
-
-La prochaine etape propre serait :
-
-- creer un reseau honeypot separe ;
-- le connecter a pfSense ;
-- bloquer l'acces vers le LAN interne ;
-- autoriser seulement les flux necessaires vers Wazuh ;
-- installer un honeypot type Cowrie.
-
-Reponse courte :
-
-```text
-Le honeypot a du sens s'il est isole. Sinon il ajoute du risque sans apporter une vraie architecture de securite.
 ```
 
 ## Pourquoi ne pas avoir mis de vrais VLAN ?

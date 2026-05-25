@@ -280,6 +280,12 @@ Ameliorations prevues :
 |       `-- plan-adressage-yops.png
 |-- doc-oral/
 |   `-- ORAL_SIMPLE_YOPS.md
+|-- doc-dev/
+|   |-- README.md
+|   |-- 01_CAHIER_DES_CHARGES.md
+|   |-- 02_MODELE_DONNEES.md
+|   |-- 03_ROADMAP_DEV.md
+|   `-- 04_DEMO_DEV_ORAL.md
 |-- docs/
 |   |-- 00_PLAN_GLOBAL_YOPS.md
 |   |-- 01_PLAYBOOK_INFRA_PROXMOX_PFSENSE_TAILSCALE.md
@@ -302,6 +308,7 @@ Ameliorations prevues :
 
 - [Etat d'avancement infrastructure](doc-github/README_INFRA_YOPS_ETAT_AVANCEMENT.md)
 - [Support oral simple](doc-oral/ORAL_SIMPLE_YOPS.md)
+- [Plan partie DEV](doc-dev/README.md)
 - [Runbook d'execution A a Z](docs/08_RUNBOOK_EXECUTION_INFRA_A_Z.md)
 - [Playbook Windows Server AD](docs/02_PLAYBOOK_WINDOWS_SERVER_AD.md)
 - [Playbook Linux](docs/03_PLAYBOOK_LINUX_SERVERS.md)

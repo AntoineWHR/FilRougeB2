@@ -19,10 +19,13 @@ L'application doit permettre de gerer :
 |---|---|
 | Backend | Laravel/PHP |
 | Frontend | Blade + CSS framework simple, ou Laravel Breeze |
-| Base de donnees | MariaDB |
-| Serveur web | Nginx |
+| Base de donnees | SQLite local |
+| Serveur web | Serveur local Laravel |
 | Authentification | Laravel Breeze ou auth Laravel |
 | Versioning | Git |
+
+La partie DEV est prevue pour tourner **uniquement en local sur le PC**.  
+Elle ne depend pas de Proxmox, Tailscale ou des serveurs Linux du lab.
 
 ## Roles applicatifs
 
@@ -199,36 +202,30 @@ Securite :
 - validation cote serveur ;
 - pas d'informations sensibles dans Git.
 
-## Installation type
+## Installation type locale
 
-Sur `YOPS-WEB01` :
+Sur le PC :
 
 ```bash
-cd /var/www
-sudo git clone <repo> yops
+git clone <repo> yops
 cd yops
 composer install
 cp .env.example .env
 php artisan key:generate
+touch database/database.sqlite
 php artisan migrate --seed
-php artisan storage:link
-sudo chown -R www-data:www-data /var/www/yops
+php artisan serve
 ```
 
 Variables `.env` :
 
 ```env
 APP_NAME=YOps
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=http://10.10.10.20
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8000
 
-DB_CONNECTION=mysql
-DB_HOST=10.10.10.21
-DB_PORT=3306
-DB_DATABASE=yops_app
-DB_USERNAME=yops_app
-DB_PASSWORD=MotDePasseFortAChanger!
+DB_CONNECTION=sqlite
 ```
 
 ## Tests fonctionnels
@@ -239,7 +236,7 @@ DB_PASSWORD=MotDePasseFortAChanger!
 - un client ne voit que ses propres rapports ;
 - le dashboard affiche les statistiques ;
 - les formulaires refusent les champs obligatoires vides ;
-- l'application fonctionne depuis le LAN et depuis Tailscale.
+- l'application fonctionne en local sur `http://127.0.0.1:8000`.
 
 ## Demonstration DEV
 
@@ -252,4 +249,3 @@ Scenario court :
 5. Creation d'un ticket de remediation.
 6. Consultation du dashboard.
 7. Connexion avec un compte client et verification de la restriction d'acces.
-
