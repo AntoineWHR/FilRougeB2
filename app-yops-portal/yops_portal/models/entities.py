@@ -79,3 +79,33 @@ class Report:
     executive_summary: str
     generated_at: str
 
+
+@dataclass(frozen=True)
+class ClientNote:
+    id: int
+    client_id: int
+    client_name: str
+    author_name: str
+    kind: str
+    body: str
+    created_at: str
+
+
+@dataclass(frozen=True)
+class AuditRequest:
+    id: int
+    client_id: int
+    client_name: str
+    requested_by_name: str
+    audit_type: str
+    scope: str
+    rules: str
+    urgency: str
+    target_date: str | None
+    status: str
+    admin_response: str
+    responded_by_name: str | None
+    responded_at: str | None
+    audit_id: int | None
+    created_at: str
+

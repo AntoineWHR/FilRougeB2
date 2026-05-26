@@ -42,6 +42,15 @@ class AuditRepository(BaseRepository):
         )
         return self._map(row) if row else None
 
+    def create(self, client_id: int, owner_id: int, title: str, audit_type: str, starts_at: str, ends_at: str | None, status: str = "planifie") -> int:
+        return self.execute(
+            """
+            INSERT INTO audits (client_id, owner_id, title, audit_type, starts_at, ends_at, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (client_id, owner_id, title, audit_type, starts_at, ends_at, status),
+        )
+
     def _map(self, row) -> Audit:
         return Audit(
             row["id"],

@@ -24,6 +24,67 @@ def initialize_database() -> None:
     with get_connection() as db:
         create_schema(db)
         seed_database(db)
+        seed_notes_if_empty(db)
+        seed_requests_if_empty(db)
+
+
+def seed_requests_if_empty(db: sqlite3.Connection) -> None:
+    existing = db.execute("SELECT COUNT(*) AS count FROM audit_requests").fetchone()["count"]
+    if existing:
+        return
+    client_ids = {row["name"]: row["id"] for row in db.execute("SELECT id, name FROM clients")}
+    rows = db.execute("SELECT id, client_id FROM users WHERE client_id IS NOT NULL").fetchall()
+    client_user = {row["client_id"]: row["id"] for row in rows}
+    if not client_user:
+        return
+    seeds = []
+    if "Alphatech" in client_ids and client_ids["Alphatech"] in client_user:
+        seeds.append((
+            client_ids["Alphatech"], client_user[client_ids["Alphatech"]],
+            "web", "Tester l'API mobile en pré-production : auth, paiements, gestion des sessions.",
+            "Compte de test fourni, fenêtre de tir 22h-06h, pas de DDoS, pas d'exfiltration de données réelles.",
+            "high", "2026-06-15"
+        ))
+        seeds.append((
+            client_ids["Alphatech"], client_user[client_ids["Alphatech"]],
+            "cloud", "Revue configuration AWS sur le tenant production (IAM, S3, secrets).",
+            "Lecture seule sur les comptes IAM, exclusion des données client.",
+            "normal", "2026-07-01"
+        ))
+    if seeds:
+        db.executemany(
+            """
+            INSERT INTO audit_requests (client_id, requested_by, audit_type, scope, rules, urgency, target_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            seeds,
+        )
+
+
+def seed_notes_if_empty(db: sqlite3.Connection) -> None:
+    existing = db.execute("SELECT COUNT(*) AS count FROM client_notes").fetchone()["count"]
+    if existing:
+        return
+    client_ids = {row["name"]: row["id"] for row in db.execute("SELECT id, name FROM clients")}
+    user_ids = {row["email"]: row["id"] for row in db.execute("SELECT id, email FROM users")}
+    sarah = user_ids.get("sarah.diallo@yops.local")
+    hugo = user_ids.get("hugo.bernard@yops.local")
+    if not (sarah and hugo):
+        return
+    seeds = [
+        ("Alphatech", sarah, "alert", "MFA toujours pas activé sur les comptes admin — relance prévue cette semaine.", "2026-05-19 09:14:00"),
+        ("Alphatech", hugo, "contact", "Appel avec Mila Ferrand : extension du périmètre à l'API mobile validée.", "2026-05-17 14:32:00"),
+        ("Alphatech", sarah, "note", "Préparer la démo de remédiation SQLi pour le prochain comité.", "2026-05-15 10:05:00"),
+        ("MedSecure", sarah, "meeting", "Réunion PRA effectuée. RTO fixé à 4h, RPO à 1h sur les bases critiques.", "2026-05-12 16:00:00"),
+        ("MedSecure", sarah, "alert", "TLS 1.0 toujours actif sur vpn-gateway, à corriger avant fin de sprint.", "2026-05-14 08:42:00"),
+        ("RetailOne", hugo, "contact", "Lina Chau confirme la signature du contrat managé SOC.", "2026-05-03 11:20:00"),
+        ("CityCloud", sarah, "alert", "Compte root cloud encore utilisé en quotidien — escalade en cours.", "2026-05-17 18:55:00"),
+        ("CityCloud", hugo, "note", "Demande d'extension SOC vers leur tenant secondaire.", "2026-05-10 09:00:00"),
+    ]
+    db.executemany(
+        "INSERT INTO client_notes (client_id, author_id, kind, body, created_at) VALUES (?, ?, ?, ?, ?)",
+        [(client_ids[name], uid, kind, body, ts) for name, uid, kind, body, ts in seeds if name in client_ids],
+    )
 
 
 def create_schema(db: sqlite3.Connection) -> None:
@@ -107,9 +168,45 @@ def create_schema(db: sqlite3.Connection) -> None:
             FOREIGN KEY (audit_id) REFERENCES audits(id)
         );
 
+        CREATE TABLE IF NOT EXISTS client_notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            client_id INTEGER NOT NULL,
+            author_id INTEGER NOT NULL,
+            body TEXT NOT NULL,
+            kind TEXT NOT NULL DEFAULT 'note' CHECK(kind IN ('note', 'contact', 'alert', 'meeting')),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (client_id) REFERENCES clients(id),
+            FOREIGN KEY (author_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS audit_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            client_id INTEGER NOT NULL,
+            requested_by INTEGER NOT NULL,
+            audit_type TEXT NOT NULL,
+            scope TEXT NOT NULL,
+            rules TEXT NOT NULL DEFAULT '',
+            urgency TEXT NOT NULL DEFAULT 'normal' CHECK(urgency IN ('low', 'normal', 'high', 'urgent')),
+            target_date TEXT,
+            status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'rejected')),
+            admin_response TEXT NOT NULL DEFAULT '',
+            responded_by INTEGER,
+            responded_at TEXT,
+            audit_id INTEGER,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (client_id) REFERENCES clients(id),
+            FOREIGN KEY (requested_by) REFERENCES users(id),
+            FOREIGN KEY (responded_by) REFERENCES users(id),
+            FOREIGN KEY (audit_id) REFERENCES audits(id)
+        );
+
         CREATE INDEX IF NOT EXISTS idx_vuln_severity ON vulnerabilities(severity);
         CREATE INDEX IF NOT EXISTS idx_vuln_status ON vulnerabilities(status);
         CREATE INDEX IF NOT EXISTS idx_tickets_due_date ON remediation_tickets(due_date);
+        CREATE INDEX IF NOT EXISTS idx_notes_client ON client_notes(client_id);
+        CREATE INDEX IF NOT EXISTS idx_notes_created ON client_notes(created_at);
+        CREATE INDEX IF NOT EXISTS idx_requests_status ON audit_requests(status);
+        CREATE INDEX IF NOT EXISTS idx_requests_client ON audit_requests(client_id);
         """
     )
 
@@ -237,5 +334,23 @@ def seed_database(db: sqlite3.Connection) -> None:
     db.executemany(
         "INSERT INTO reports (audit_id, title, executive_summary, generated_at) VALUES (?, ?, ?, ?)",
         reports,
+    )
+
+    notes = [
+        (client_ids["Alphatech"], user_ids["sarah.diallo@yops.local"], "alert", "MFA toujours pas activé sur les comptes admin — relance prévue cette semaine.", "2026-05-19 09:14:00"),
+        (client_ids["Alphatech"], user_ids["hugo.bernard@yops.local"], "contact", "Appel avec Mila Ferrand : extension du périmètre à l'API mobile validée.", "2026-05-17 14:32:00"),
+        (client_ids["Alphatech"], user_ids["sarah.diallo@yops.local"], "note", "Préparer la démo de remédiation SQLi pour le prochain comité.", "2026-05-15 10:05:00"),
+        (client_ids["MedSecure"], user_ids["sarah.diallo@yops.local"], "meeting", "Réunion PRA effectuée. RTO fixé à 4h, RPO à 1h sur les bases critiques.", "2026-05-12 16:00:00"),
+        (client_ids["MedSecure"], user_ids["sarah.diallo@yops.local"], "alert", "TLS 1.0 toujours actif sur vpn-gateway, à corriger avant fin de sprint.", "2026-05-14 08:42:00"),
+        (client_ids["RetailOne"], user_ids["hugo.bernard@yops.local"], "contact", "Lina Chau confirme la signature du contrat managé SOC.", "2026-05-03 11:20:00"),
+        (client_ids["CityCloud"], user_ids["sarah.diallo@yops.local"], "alert", "Compte root cloud encore utilisé en quotidien — escalade en cours.", "2026-05-17 18:55:00"),
+        (client_ids["CityCloud"], user_ids["hugo.bernard@yops.local"], "note", "Demande d'extension SOC vers leur tenant secondaire.", "2026-05-10 09:00:00"),
+    ]
+    db.executemany(
+        """
+        INSERT INTO client_notes (client_id, author_id, kind, body, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        notes,
     )
 

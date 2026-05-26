@@ -8,7 +8,9 @@ from urllib.parse import parse_qs, unquote, urlparse
 from yops_portal.core.database import initialize_database
 from yops_portal.core.security import SessionStore, SessionUser
 from yops_portal.repositories.audit_repository import AuditRepository
+from yops_portal.repositories.audit_request_repository import AuditRequestRepository
 from yops_portal.repositories.base import BaseRepository
+from yops_portal.repositories.client_note_repository import ClientNoteRepository
 from yops_portal.repositories.client_repository import ClientRepository
 from yops_portal.repositories.report_repository import ReportRepository
 from yops_portal.repositories.ticket_repository import TicketRepository
@@ -31,7 +33,9 @@ class Services:
         self.base = BaseRepository()
         self.users = UserRepository()
         self.clients = ClientRepository()
+        self.notes = ClientNoteRepository()
         self.audits = AuditRepository()
+        self.audit_requests = AuditRequestRepository()
         self.vulnerabilities = VulnerabilityRepository()
         self.tickets = TicketRepository()
         self.reports = ReportRepository()
@@ -88,7 +92,13 @@ class YOpsApplication:
         if path == "/dashboard":
             if user.role == "client":
                 return self.respond(request, self.client_dashboard(user))
-            return self.respond(request, html.dashboard_page(user, self.services.dashboard.get_dashboard()))
+            data = self.services.dashboard.get_dashboard()
+            data["pending_requests"] = self.services.audit_requests.list_pending()
+            return self.respond(request, html.dashboard_page(user, data))
+        if path == "/audit-requests":
+            if user.role == "client":
+                return self.redirect(request, "/dashboard")
+            return self.respond(request, html.audit_requests_page(user, self.services.audit_requests.list_all()))
         if path == "/clients":
             if user.role == "client":
                 return self.redirect(request, "/dashboard")
@@ -108,7 +118,8 @@ class YOpsApplication:
             )
             if risk is None:
                 return self.respond(request, html.not_found_page(user), HTTPStatus.NOT_FOUND)
-            return self.respond(request, html.client_detail_page(user, client, audits, vulnerabilities, risk))
+            notes = self.services.notes.list_for_client(client.id) if user.role != "client" else []
+            return self.respond(request, html.client_detail_page(user, client, audits, vulnerabilities, risk, notes))
         if path == "/audits":
             if user.role == "client":
                 return self.respond(request, html.audits_page(user, self.services.audits.list_for_client(user.client_id or 0)))
@@ -131,6 +142,7 @@ class YOpsApplication:
                     user,
                     self.services.vulnerabilities.list_vulnerabilities(query.get("severity"), query.get("status")),
                     self.services.audits.list_audits(),
+                    self.services.clients.list_clients(),
                     query,
                 ),
             )
@@ -170,8 +182,51 @@ class YOpsApplication:
             return self.redirect(request, "/login", cookie="yops_session=deleted; Max-Age=0; Path=/")
         if user is None:
             return self.redirect(request, "/login")
+        if path == "/audit-requests" and user.role == "client":
+            try:
+                require_fields(data, ["audit_type", "scope"])
+                if user.client_id is None:
+                    return self.redirect(request, "/dashboard")
+                self.services.audit_requests.create({
+                    "client_id": user.client_id,
+                    "requested_by": user.id,
+                    "audit_type": data.get("audit_type", "web"),
+                    "scope": data.get("scope", "").strip(),
+                    "rules": data.get("rules", "").strip(),
+                    "urgency": data.get("urgency", "normal"),
+                    "target_date": data.get("target_date", "").strip() or None,
+                })
+            except ValidationError:
+                pass
+            return self.redirect(request, "/dashboard#requests")
         if user.role == "client":
             return self.redirect(request, "/dashboard")
+        if path.startswith("/audit-requests/") and path.endswith("/respond"):
+            try:
+                req_id = int(path.split("/")[2])
+            except ValueError:
+                return self.redirect(request, "/dashboard")
+            req = self.services.audit_requests.find(req_id)
+            if req is None or req.status != "pending":
+                return self.redirect(request, "/audit-requests")
+            decision = data.get("decision", "")
+            message = data.get("message", "").strip()
+            if decision == "accept":
+                title = data.get("title", "").strip() or f"Audit {req.audit_type} - {req.client_name}"
+                starts_at = data.get("starts_at", "").strip() or req.target_date or "2026-06-01"
+                audit_id = self.services.audits.create(
+                    client_id=req.client_id,
+                    owner_id=user.id,
+                    title=title,
+                    audit_type=req.audit_type,
+                    starts_at=starts_at,
+                    ends_at=None,
+                    status="planifie",
+                )
+                self.services.audit_requests.respond(req.id, "accepted", user.id, message or "Demande acceptée.", audit_id)
+            elif decision == "reject":
+                self.services.audit_requests.respond(req.id, "rejected", user.id, message or "Demande refusée.", None)
+            return self.redirect(request, "/audit-requests")
         if path == "/clients":
             try:
                 require_fields(data, ["name", "sector", "contact_name", "email", "phone"])
@@ -179,11 +234,38 @@ class YOpsApplication:
                 return self.redirect(request, "/clients")
             except ValidationError as exc:
                 return self.respond(request, html.clients_page(user, self.services.clients.list_clients(), exc.errors), HTTPStatus.BAD_REQUEST)
+        if path.startswith("/clients/") and path.endswith("/notes"):
+            try:
+                client_id = int(path.split("/")[2])
+            except ValueError:
+                return self.redirect(request, "/clients")
+            client = self.services.clients.find(client_id)
+            if client is None:
+                return self.redirect(request, "/clients")
+            body = (data.get("body") or "").strip()
+            kind = data.get("kind", "note")
+            if kind not in ("note", "contact", "alert", "meeting"):
+                kind = "note"
+            if body:
+                self.services.notes.create(client.id, user.id, kind, body)
+            return self.redirect(request, f"/clients/{client.id}#notes")
+        if path.startswith("/vulnerabilities/") and path.endswith("/status"):
+            try:
+                vuln_id = int(path.split("/")[2])
+            except ValueError:
+                return self.redirect(request, "/vulnerabilities")
+            vuln = self.services.vulnerabilities.find(vuln_id)
+            status = data.get("status", "")
+            if vuln is not None and status in ("ouverte", "en_cours", "corrigee", "acceptee"):
+                self.services.vulnerabilities.update_status(vuln_id, status)
+            return_to = data.get("return_to") or "/vulnerabilities"
+            return self.redirect(request, return_to)
         if path == "/vulnerabilities":
             try:
                 require_fields(data, ["audit_id", "title", "description", "severity", "cvss_score", "asset", "evidence", "recommendation"])
                 self.services.vulnerabilities.create(data)
-                return self.redirect(request, "/vulnerabilities")
+                query = {key: values[-1] for key, values in parse_qs(parsed.query).items()}
+                return self.redirect(request, query.get("return_to", "/vulnerabilities"))
             except ValidationError as exc:
                 query = {key: values[-1] for key, values in parse_qs(parsed.query).items()}
                 return self.respond(
@@ -212,6 +294,7 @@ class YOpsApplication:
             self.services.vulnerabilities.list_for_client(client.id),
             self.services.tickets.list_for_client(client.id),
             self.services.reports.list_for_client(client.id),
+            self.services.audit_requests.list_for_client(client.id),
         )
 
     def serve_asset(self, request: BaseHTTPRequestHandler, path: str) -> None:
@@ -220,7 +303,12 @@ class YOpsApplication:
         if not str(asset_path).startswith(str((PUBLIC_DIR / "assets").resolve())) or not asset_path.exists():
             request.send_error(404)
             return
-        content_type = "text/css" if asset_path.suffix == ".css" else "text/javascript" if asset_path.suffix == ".js" else "application/octet-stream"
+        content_types = {
+            ".css": "text/css",
+            ".js": "text/javascript",
+            ".png": "image/png",
+        }
+        content_type = content_types.get(asset_path.suffix, "application/octet-stream")
         body = asset_path.read_bytes()
         request.send_response(HTTPStatus.OK)
         request.send_header("Content-Type", content_type)

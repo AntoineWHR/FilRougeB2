@@ -47,9 +47,10 @@ def layout(title: str, user: SessionUser | None, content: str, active: str = "da
             links = [
                 ("home", "/", "Accueil"),
                 ("dashboard", "/dashboard", "Back-office"),
+                ("requests", "/audit-requests", "Demandes"),
                 ("clients", "/clients", "Clients"),
                 ("audits", "/audits", "Audits"),
-                ("vulnerabilities", "/vulnerabilities", "Vulnerabilites"),
+                ("vulnerabilities", "/vulnerabilities", "Vulnérabilités"),
                 ("tickets", "/tickets", "Tickets"),
                 ("reports", "/reports", "Rapports"),
             ]
@@ -70,7 +71,7 @@ def layout(title: str, user: SessionUser | None, content: str, active: str = "da
                 <strong>{e(user.name)}</strong>
                 <small>{e(user.role)}</small>
                 <form method="post" action="/logout">
-                    <button class="ghost-button" type="submit">Deconnexion</button>
+                    <button class="ghost-button" type="submit">Déconnexion</button>
                 </form>
             </div>
         </aside>
@@ -128,16 +129,16 @@ def landing_page(user: SessionUser | None = None) -> bytes:
         </a>
         <div>
             <a href="#services">Services</a>
-            <a href="#method">Methode</a>
+            <a href="#method">Méthode</a>
             <a href="#pricing">Offres</a>
             <a class="secondary-button" href="{account_link}">{account_label}</a>
         </div>
     </nav>
     <section class="hero-section reveal">
         <div class="hero-copy">
-            <p class="eyebrow">Audit - SOC - Remediation</p>
-            <h1>La securite cyber lisible pour les PME.</h1>
-            <p>YOps aide les entreprises a identifier leurs risques, prioriser les corrections et suivre les actions sans jargon inutile.</p>
+            <p class="eyebrow">Audit - SOC - Remédiation</p>
+            <h1>La sécurité cyber <em>lisible</em> pour les PME.</h1>
+            <p>YOps aide les entreprises à identifier leurs risques, prioriser les corrections et suivre les actions sans jargon inutile.</p>
             <div class="hero-actions">
                 <a class="primary-link" href="/register">Demander un audit</a>
                 <a class="text-link" href="#services">Voir les services</a>
@@ -145,55 +146,85 @@ def landing_page(user: SessionUser | None = None) -> bytes:
         </div>
         <aside class="hero-board double-bezel">
             <div class="card-core">
-                <span class="board-label">Synthese client</span>
-                <strong>Risque expose</strong>
-                <div class="board-score"><span>82</span><small>/100</small></div>
-                <div class="board-bars">
-                    <span style="--w: 82%"></span>
-                    <span style="--w: 58%"></span>
-                    <span style="--w: 34%"></span>
+                <img src="/assets/yops-cyber-visual.png" alt="Visuels YOps Cybersecurity générés pour la landing page">
+                <div class="hero-overlay top-right is-floating" style="--delay: 120ms; --float-delay: 0.4s">
+                    <span class="live-dot" aria-hidden="true"></span>
+                    <strong>SOC actif · 24/7</strong>
                 </div>
-                <p>Rapport clair, plan de correction, suivi des tickets.</p>
+                <div class="hero-overlay top-left is-floating alt" style="--delay: 220ms; --float-delay: 1.1s">
+                    <span class="board-label">Synthèse client</span>
+                    <strong>Risque exposé</strong>
+                    <div class="board-score"><span>82</span><small>/100</small></div>
+                    <div class="board-bars">
+                        <span style="--w: 82%; --bar-delay: 400ms"></span>
+                        <span style="--w: 58%; --bar-delay: 540ms"></span>
+                        <span style="--w: 34%; --bar-delay: 680ms"></span>
+                    </div>
+                </div>
+                <div class="hero-overlay bottom-right is-floating" style="--delay: 360ms; --float-delay: 1.8s">
+                    <span class="board-label">Remédiation</span>
+                    <strong>12 tickets traités cette semaine</strong>
+                </div>
             </div>
         </aside>
     </section>
+    <section class="trust-strip" aria-label="Stack et standards">
+        <div class="trust-track">
+            <span>OWASP Top 10</span>
+            <span>ISO 27001</span>
+            <span>ANSSI · PASSI</span>
+            <span>Wazuh SIEM</span>
+            <span>Active Directory</span>
+            <span>pfSense</span>
+            <span>NIST CSF</span>
+            <span>CVSS 3.1</span>
+            <span>OWASP Top 10</span>
+            <span>ISO 27001</span>
+            <span>ANSSI · PASSI</span>
+            <span>Wazuh SIEM</span>
+            <span>Active Directory</span>
+            <span>pfSense</span>
+            <span>NIST CSF</span>
+            <span>CVSS 3.1</span>
+        </div>
+    </section>
     <section id="services" class="service-strip reveal">
-        <article><span>01</span><h2>Audit web</h2><p>Recherche de failles sur application, API et authentification.</p></article>
-        <article><span>02</span><h2>Audit infrastructure</h2><p>Controle AD, serveurs, partages, sauvegardes et exposition reseau.</p></article>
-        <article><span>03</span><h2>Supervision SOC</h2><p>Mise en place d'agents, alertes, tableaux de bord et suivi des incidents.</p></article>
+        <article><span>01</span><h2>Audit web</h2><p>Recherche de failles sur application, API, authentification et parcours sensibles.</p><small>OWASP, API, comptes, sessions</small></article>
+        <article><span>02</span><h2>Audit infrastructure</h2><p>Contrôle AD, serveurs, partages, sauvegardes et exposition réseau.</p><small>AD, Linux, Windows Server, pfSense</small></article>
+        <article><span>03</span><h2>Supervision SOC</h2><p>Mise en place d'agents, alertes, tableaux de bord et suivi des incidents.</p><small>Wazuh, logs, endpoints, reporting</small></article>
     </section>
     <section id="method" class="method-section reveal">
         <div>
-            <p class="eyebrow">Methode</p>
+            <p class="eyebrow">Méthode</p>
             <h2>Un parcours simple, du premier contact au rapport final.</h2>
         </div>
         <ol class="method-list">
-            <li><strong>Cadrage</strong><span>On comprend le besoin, le perimetre et les contraintes.</span></li>
-            <li><strong>Evaluation</strong><span>On teste les actifs et on qualifie les risques.</span></li>
-            <li><strong>Remediation</strong><span>On priorise les corrections et on suit les tickets.</span></li>
+            <li><strong>Cadrage</strong><span>On comprend le besoin, le périmètre et les contraintes.</span></li>
+            <li><strong>Évaluation</strong><span>On teste les actifs et on qualifie les risques.</span></li>
+            <li><strong>Remédiation</strong><span>On priorise les corrections et on suit les tickets.</span></li>
             <li><strong>Restitution</strong><span>Vous recevez un rapport clair pour la technique et la direction.</span></li>
         </ol>
     </section>
     <section id="pricing" class="pricing-grid reveal">
         <article class="price-card">
             <span>Starter</span><h2>Audit express</h2><strong>Sur devis</strong>
-            <p>Pour valider rapidement un site, une API ou un serveur expose.</p>
+            <p>Pour valider rapidement un site, une API ou un serveur exposé.</p>
             <a href="/register">Choisir</a>
         </article>
         <article class="price-card is-featured">
             <span>Business</span><h2>Audit complet</h2><strong>Sur devis</strong>
-            <p>Audit web + infrastructure + plan de remediation suivi.</p>
+            <p>Audit web + infrastructure + plan de remédiation suivi.</p>
             <a href="/register">Demander une proposition</a>
         </article>
         <article class="price-card">
             <span>Managed</span><h2>Suivi SOC</h2><strong>Mensuel</strong>
-            <p>Supervision, alertes, durcissement et reporting regulier.</p>
-            <a href="/register">Echanger</a>
+            <p>Supervision, alertes, durcissement et reporting régulier.</p>
+            <a href="/register">Échanger</a>
         </article>
     </section>
     <section class="final-cta reveal">
         <h2>Besoin d'une vision claire de votre exposition cyber ?</h2>
-        <a class="primary-link" href="/register">Creer un espace client</a>
+        <a class="primary-link" href="/register">Créer un espace client</a>
     </section>
     """
     return public_shell("Services cyber pour PME", content)
@@ -205,15 +236,15 @@ def login_page(error: str | None = None) -> bytes:
     <section class="login-wrap reveal">
         <div class="login-copy">
             <p class="eyebrow">YOps Cybersecurity</p>
-            <h1>Connectez-vous a votre espace cyber.</h1>
-            <p>Clients et equipe YOps retrouvent ici les audits, les risques, les tickets et les rapports de securite.</p>
+            <h1>Connectez-vous à votre espace cyber.</h1>
+            <p>Clients et équipe YOps retrouvent ici les audits, les risques, les tickets et les rapports de sécurité.</p>
             <div class="login-metrics">
-                <span><strong>client</strong> espace dedie</span>
+                <span><strong>client</strong> espace dédié</span>
                 <span><strong>admin</strong> back-office</span>
                 <span><strong>local</strong> SQLite</span>
             </div>
             <figure class="login-visual">
-                <img src="/assets/login-visual.svg" alt="Apercu graphique d'un rapport cyber YOps">
+                <img src="/assets/yops-login-visual.png" alt="Aperçu graphique d'un espace de connexion cyber YOps">
             </figure>
         </div>
         <form class="login-card double-bezel" method="post" action="/login">
@@ -228,7 +259,7 @@ def login_page(error: str | None = None) -> bytes:
                 </label>
                 <button class="primary-button" type="submit"><span>Entrer</span><span class="button-dot">↗</span></button>
                 <p class="form-help">Pas encore client ? <a href="/register">Demander un audit</a></p>
-                <p class="form-help">Comptes demo : admin@yops.local, sarah.diallo@yops.local, client@alphatech.local</p>
+                <p class="form-help">Comptes démo : admin@yops.local, sarah.diallo@yops.local, client@alphatech.local</p>
             </div>
         </form>
     </section>
@@ -244,7 +275,7 @@ def register_page(errors: list[str] | None = None, data: dict[str, str] | None =
         <div class="login-copy">
             <p class="eyebrow">Demande client</p>
             <h1>Demandez un audit YOps.</h1>
-            <p>Creer un espace client permet de centraliser les echanges, les audits, les vulnerabilites et les rapports.</p>
+            <p>Créer un espace client permet de centraliser les échanges, les audits, les vulnérabilités et les rapports.</p>
             <div class="login-metrics">
                 <span><strong>48h</strong> premier retour</span>
                 <span><strong>PME</strong> cible</span>
@@ -253,16 +284,16 @@ def register_page(errors: list[str] | None = None, data: dict[str, str] | None =
         </div>
         <form class="login-card double-bezel" method="post" action="/register">
             <div class="card-core">
-                <h2>Creation de l'espace client</h2>
+                <h2>Création de l'espace client</h2>
                 {error_html}
                 <label>Entreprise<input name="company" value="{e(data.get('company', ''))}" required></label>
                 <label>Secteur<input name="sector" value="{e(data.get('sector', ''))}" required></label>
                 <label>Nom du contact<input name="name" value="{e(data.get('name', ''))}" required></label>
                 <label>Email professionnel<input name="email" type="email" value="{e(data.get('email', ''))}" required></label>
-                <label>Telephone<input name="phone" value="{e(data.get('phone', ''))}" required></label>
+                <label>Téléphone<input name="phone" value="{e(data.get('phone', ''))}" required></label>
                 <label>Mot de passe<input name="password" type="password" required></label>
-                <button class="primary-button" type="submit"><span>Creer ma demande</span><span class="button-dot">↗</span></button>
-                <p class="form-help"><a href="/">Retour au site</a> - deja inscrit ? <a href="/login">Connexion</a></p>
+                <button class="primary-button" type="submit"><span>Créer ma demande</span><span class="button-dot">↗</span></button>
+                <p class="form-help"><a href="/">Retour au site</a> - déjà inscrit ? <a href="/login">Connexion</a></p>
             </div>
         </form>
     </section>
@@ -311,36 +342,235 @@ def dashboard_page(user: SessionUser, data: dict) -> bytes:
         """
         for risk in data["client_risks"]
     )
+    top_assets = data.get("top_assets", [])
+    audit_progress = data.get("audit_progress", [])
+    activity = data.get("activity", [])
+
+    asset_rows = "".join(
+        f"""
+        <li class="asset-row">
+            <div>
+                <strong>{e(asset["asset"])}</strong>
+                <small>{e(asset["client_name"])}</small>
+            </div>
+            <div class="asset-meta">
+                <span class="badge badge-{'critical' if asset['max_cvss'] >= 9 else 'high' if asset['max_cvss'] >= 7 else 'medium'}">CVSS {asset["max_cvss"]}</span>
+                <strong>{asset["open_count"]}<small>/{asset["total"]}</small></strong>
+            </div>
+        </li>
+        """
+        for asset in top_assets
+    )
+
+    progress_rows = "".join(
+        f"""
+        <article class="progress-row">
+            <div>
+                <strong><a href="/audits/{ap["id"]}">{e(ap["title"])}</a></strong>
+                <small>{e(ap["client_name"])} · {ap["fixed"]}/{ap["total"]} corrigées</small>
+            </div>
+            <div class="progress-bar" role="progressbar" aria-valuenow="{ap["percent"]}" aria-valuemin="0" aria-valuemax="100">
+                <span style="--w: {ap["percent"]}%"></span>
+            </div>
+            <span class="progress-pct">{ap["percent"]}%</span>
+        </article>
+        """
+        for ap in audit_progress
+    )
+
+    activity_rows = "".join(
+        f"""
+        <li class="activity-item kind-{e(item["kind"])}">
+            <span class="activity-marker">{_activity_icon(item["kind"])}</span>
+            <div>
+                <strong>{e(item["label"])}</strong>
+                <small>{e(item["client_name"])} · {_activity_label(item["kind"], item.get("detail", ""))} · {e(item["happened_at"])}</small>
+            </div>
+        </li>
+        """
+        for item in activity
+    )
+
+    pending_requests = data.get("pending_requests", [])
+    pending_section = _pending_requests_block(pending_requests)
+
     content = page_header(
         "Pilotage cyber local",
-        "Vue metier des clients, audits, vulnerabilites et remediations.",
+        "Vue métier des clients, audits, vulnérabilités et remédiations.",
     )
     content += f"""
+    <h2 class="section-title reveal"><span>Vue d'ensemble</span><small>{stats["active_clients"]} clients - {stats["active_audits"]} audits actifs</small></h2>
     <section class="kpi-grid reveal">
-        <article class="kpi-card"><span>Clients actifs</span><strong>{stats["active_clients"]}</strong></article>
-        <article class="kpi-card"><span>Audits en cours</span><strong>{stats["active_audits"]}</strong></article>
-        <article class="kpi-card danger"><span>Critiques ouvertes</span><strong>{stats["critical_open"]}</strong></article>
-        <article class="kpi-card"><span>Remediation</span><strong>{stats["remediation_rate"]}%</strong></article>
+        <article class="kpi-card"><span>Clients actifs</span><strong data-count="{stats["active_clients"]}">{stats["active_clients"]}</strong></article>
+        <article class="kpi-card"><span>Audits en cours</span><strong data-count="{stats["active_audits"]}">{stats["active_audits"]}</strong></article>
+        <article class="kpi-card danger"><span>Critiques ouvertes</span><strong data-count="{stats["critical_open"]}">{stats["critical_open"]}</strong></article>
+        <article class="kpi-card"><span>Remédiation</span><strong data-count="{stats["remediation_rate"]}" data-suffix="%">{stats["remediation_rate"]}%</strong></article>
     </section>
-    <section class="bento-grid reveal">
-        <article class="panel panel-wide">
-            <div class="panel-head"><h2>Dernieres vulnerabilites</h2><a href="/vulnerabilities">Tout voir</a></div>
-            <div class="table-wrap"><table><thead><tr><th>Titre</th><th>Client</th><th>Criticite</th><th>Statut</th><th>CVSS</th></tr></thead><tbody>{recent}</tbody></table></div>
+    <section class="quick-actions reveal">
+        <a class="quick-action" href="/clients"><span class="qa-icon">＋</span><div><strong>Ajouter un client</strong><small>Créer un nouveau dossier</small></div></a>
+        <a class="quick-action" href="/vulnerabilities"><span class="qa-icon">⚠</span><div><strong>Déclarer une faille</strong><small>Ajouter au registre</small></div></a>
+        <a class="quick-action {'highlight' if pending_requests else ''}" href="/audit-requests"><span class="qa-icon">✉</span><div><strong>Demandes clients</strong><small>{len(pending_requests)} en attente</small></div></a>
+        <a class="quick-action" href="/tickets"><span class="qa-icon">≡</span><div><strong>Tickets</strong><small>{stats["late_tickets"]} en retard</small></div></a>
+    </section>
+    {pending_section}
+    <h2 class="section-title reveal"><span>Pilotage des audits</span><small>Avancement et actifs à risque</small></h2>
+    <section class="split-grid reveal">
+        <article class="panel">
+            <div class="panel-head"><h2>Progression des audits actifs</h2><a href="/audits">Tout voir</a></div>
+            <div class="progress-list">{progress_rows or '<p class="form-help">Aucun audit en cours.</p>'}</div>
         </article>
         <article class="panel">
-            <div class="panel-head"><h2>Criticites</h2></div>
+            <div class="panel-head"><h2>Actifs à risque</h2></div>
+            <ol class="asset-list">{asset_rows or '<li class="form-help">Aucun actif exposé.</li>'}</ol>
+        </article>
+    </section>
+    <h2 class="section-title reveal"><span>Risque & vulnérabilités</span><small>Niveau d'exposition par client</small></h2>
+    <section class="split-grid reveal">
+        <article class="panel">
+            <div class="panel-head"><h2>Dernières vulnérabilités</h2><a href="/vulnerabilities">Tout voir</a></div>
+            <div class="table-wrap"><table><thead><tr><th>Titre</th><th>Client</th><th>Criticité</th><th>Statut</th><th>CVSS</th></tr></thead><tbody>{recent}</tbody></table></div>
+        </article>
+        <article class="panel">
+            <div class="panel-head"><h2>Criticités</h2></div>
             <div class="severity-list">{severity_rows}</div>
         </article>
-        <article class="panel panel-tall">
-            <div class="panel-head"><h2>Risque client</h2></div>
-            <div class="risk-list">{risk_cards}</div>
+    </section>
+    <section class="reveal">
+        <article class="panel">
+            <div class="panel-head"><h2>Risque par client</h2><small>{len(data.get("client_risks", []))} clients analysés</small></div>
+            <div class="risk-grid">{risk_cards}</div>
+        </article>
+    </section>
+    <h2 class="section-title reveal"><span>Activité récente</span><small>Vulnérabilités, notes, rapports</small></h2>
+    <section class="reveal">
+        <article class="panel">
+            <ol class="activity-list">{activity_rows}</ol>
         </article>
     </section>
     """
     return layout("Dashboard", user, content, "dashboard")
 
 
-def client_dashboard_page(user: SessionUser, client, audits, vulnerabilities, tickets, reports) -> bytes:
+def _pending_requests_block(requests) -> str:
+    if not requests:
+        return ""
+    cards = "".join(_request_card_admin(req) for req in requests)
+    return f"""
+    <h2 id="requests" class="section-title reveal accent">
+        <span>Demandes clients en attente</span>
+        <small>{len(requests)} à traiter</small>
+    </h2>
+    <section class="request-grid reveal">{cards}</section>
+    """
+
+
+def _request_card_admin(req) -> str:
+    rules = f'<p><strong>Règles :</strong> {e(req.rules)}</p>' if req.rules else ""
+    target = f'<small>Date cible : {e(req.target_date)}</small>' if req.target_date else ""
+    return f"""
+    <article class="request-card status-{e(req.status)}">
+        <header>
+            <span class="badge badge-{URGENCY_KIND[req.urgency]}">{URGENCY_LABELS[req.urgency]}</span>
+            <strong><a href="/clients/{req.client_id}">{e(req.client_name)}</a></strong>
+            <small>{e(req.requested_by_name)} · {e(req.created_at)}</small>
+        </header>
+        <div class="request-body">
+            <p class="request-type">{e(AUDIT_TYPE_LABELS.get(req.audit_type, req.audit_type))}</p>
+            <p>{e(req.scope)}</p>
+            {rules}
+            {target}
+        </div>
+        <form class="request-actions" method="post" action="/audit-requests/{req.id}/respond">
+            <input type="text" name="title" placeholder="Titre de l'audit (optionnel)">
+            <input type="date" name="starts_at">
+            <textarea name="message" rows="2" placeholder="Message au client..."></textarea>
+            <div class="request-buttons">
+                <button class="inline-button accept" type="submit" name="decision" value="accept">Accepter</button>
+                <button class="inline-button reject" type="submit" name="decision" value="reject">Refuser</button>
+            </div>
+        </form>
+    </article>
+    """
+
+
+def audit_requests_page(user: SessionUser, requests) -> bytes:
+    pending = [r for r in requests if r.status == "pending"]
+    history = [r for r in requests if r.status != "pending"]
+    pending_cards = "".join(_request_card_admin(r) for r in pending) or '<p class="form-help">Aucune demande en attente.</p>'
+    history_rows = "".join(
+        f"""
+        <tr>
+            <td><a href="/clients/{r.client_id}">{e(r.client_name)}</a></td>
+            <td>{e(AUDIT_TYPE_LABELS.get(r.audit_type, r.audit_type))}</td>
+            <td><span class="badge badge-{URGENCY_KIND[r.urgency]}">{URGENCY_LABELS[r.urgency]}</span></td>
+            <td><span class="badge badge-{REQUEST_STATUS_KIND[r.status]}">{REQUEST_STATUS_LABEL[r.status]}</span></td>
+            <td>{e(r.responded_by_name or '-')}</td>
+            <td>{e(r.responded_at or '-')}</td>
+            <td>{e(r.admin_response or '-')}</td>
+        </tr>
+        """
+        for r in history
+    )
+    content = page_header(
+        "Demandes d'audit",
+        f"{len(pending)} en attente - {len(history)} traitées.",
+        '<a class="secondary-button" href="/dashboard">Retour dashboard</a>',
+    )
+    content += f"""
+    <h2 class="section-title reveal accent"><span>À traiter</span><small>{len(pending)} demandes</small></h2>
+    <section class="request-grid reveal">{pending_cards}</section>
+    <h2 class="section-title reveal"><span>Historique</span><small>{len(history)} entrées</small></h2>
+    <article class="panel reveal">
+        <div class="table-wrap"><table><thead><tr><th>Client</th><th>Type</th><th>Urgence</th><th>Décision</th><th>Par</th><th>Le</th><th>Message</th></tr></thead><tbody>{history_rows or ''}</tbody></table></div>
+    </article>
+    """
+    return layout("Demandes d'audit", user, content, "dashboard")
+
+
+def _activity_icon(kind: str) -> str:
+    return {"vulnerability": "⚠", "note": "✎", "report": "▤"}.get(kind, "•")
+
+
+def _activity_label(kind: str, detail: str) -> str:
+    if kind == "vulnerability":
+        labels = {"critical": "Critique", "high": "Haute", "medium": "Moyenne", "low": "Faible"}
+        return f"Vulnérabilité {labels.get(detail, detail)}"
+    if kind == "note":
+        return {"note": "Note", "contact": "Contact", "alert": "Alerte", "meeting": "Réunion"}.get(detail, "Note")
+    if kind == "report":
+        return "Rapport publié"
+    return ""
+
+
+URGENCY_LABELS = {"low": "Faible", "normal": "Normale", "high": "Haute", "urgent": "Urgente"}
+URGENCY_KIND = {"low": "low", "normal": "neutral", "high": "high", "urgent": "critical"}
+AUDIT_TYPE_LABELS = {"web": "Web / API", "infra": "Infrastructure", "ad": "Active Directory", "cloud": "Cloud", "code": "Revue de code"}
+REQUEST_STATUS_LABEL = {"pending": "En attente", "accepted": "Acceptée", "rejected": "Refusée"}
+REQUEST_STATUS_KIND = {"pending": "high", "accepted": "success", "rejected": "critical"}
+
+
+def _request_card_client(req) -> str:
+    response = ""
+    if req.admin_response:
+        response = f'<p class="request-response"><strong>YOps :</strong> {e(req.admin_response)}</p>'
+    return f"""
+    <article class="request-card status-{e(req.status)}">
+        <header>
+            <span class="badge badge-{REQUEST_STATUS_KIND[req.status]}">{REQUEST_STATUS_LABEL[req.status]}</span>
+            <span class="badge badge-{URGENCY_KIND[req.urgency]}">{URGENCY_LABELS[req.urgency]}</span>
+            <strong>{e(AUDIT_TYPE_LABELS.get(req.audit_type, req.audit_type))}</strong>
+            <small>{e(req.created_at)}</small>
+        </header>
+        <p>{e(req.scope)}</p>
+        {f'<p class="form-help"><strong>Règles :</strong> {e(req.rules)}</p>' if req.rules else ''}
+        {f'<p class="form-help"><strong>Date cible :</strong> {e(req.target_date)}</p>' if req.target_date else ''}
+        {response}
+    </article>
+    """
+
+
+def client_dashboard_page(user: SessionUser, client, audits, vulnerabilities, tickets, reports, requests=None) -> bytes:
+    requests = requests or []
     audit_rows = "".join(
         f"""
         <tr>
@@ -393,28 +623,57 @@ def client_dashboard_page(user: SessionUser, client, audits, vulnerabilities, ti
     )
     content += f"""
     <section class="kpi-grid reveal">
-        <article class="kpi-card"><span>Audits</span><strong>{len(audits)}</strong></article>
-        <article class="kpi-card danger"><span>Critiques ouvertes</span><strong>{critical_vulns}</strong></article>
-        <article class="kpi-card"><span>Vulnerabilites ouvertes</span><strong>{open_vulns}</strong></article>
-        <article class="kpi-card"><span>Tickets ouverts</span><strong>{open_tickets}</strong></article>
+        <article class="kpi-card"><span>Audits</span><strong data-count="{len(audits)}">{len(audits)}</strong></article>
+        <article class="kpi-card danger"><span>Critiques ouvertes</span><strong data-count="{critical_vulns}">{critical_vulns}</strong></article>
+        <article class="kpi-card"><span>Vulnérabilités ouvertes</span><strong data-count="{open_vulns}">{open_vulns}</strong></article>
+        <article class="kpi-card"><span>Tickets ouverts</span><strong data-count="{open_tickets}">{open_tickets}</strong></article>
     </section>
     <section class="bento-grid reveal">
         <article class="panel panel-wide">
             <div class="panel-head"><h2>Mes audits</h2></div>
-            <div class="table-wrap"><table><thead><tr><th>Audit</th><th>Type</th><th>Statut</th><th>Debut</th></tr></thead><tbody>{audit_rows}</tbody></table></div>
+            <div class="table-wrap"><table><thead><tr><th>Audit</th><th>Type</th><th>Statut</th><th>Début</th></tr></thead><tbody>{audit_rows}</tbody></table></div>
         </article>
         <article class="panel">
             <div class="panel-head"><h2>Mes tickets</h2></div>
-            <div class="table-wrap"><table><thead><tr><th>Faille</th><th>Priorite</th><th>Echeance</th><th>Statut</th></tr></thead><tbody>{ticket_rows}</tbody></table></div>
+            <div class="table-wrap"><table><thead><tr><th>Faille</th><th>Priorité</th><th>Échéance</th><th>Statut</th></tr></thead><tbody>{ticket_rows}</tbody></table></div>
         </article>
         <article class="panel panel-wide">
-            <div class="panel-head"><h2>Vulnerabilites principales</h2></div>
-            <div class="table-wrap"><table><thead><tr><th>Titre</th><th>Criticite</th><th>Statut</th></tr></thead><tbody>{vuln_rows}</tbody></table></div>
+            <div class="panel-head"><h2>Vulnérabilités principales</h2></div>
+            <div class="table-wrap"><table><thead><tr><th>Titre</th><th>Criticité</th><th>Statut</th></tr></thead><tbody>{vuln_rows}</tbody></table></div>
         </article>
     </section>
     <section class="report-grid reveal">{report_cards}</section>
+    {_client_request_section(user, client, requests)}
     """
     return layout("Espace client", user, content, "dashboard")
+
+
+def _client_request_section(user: SessionUser, client, requests) -> str:
+    cards = "".join(_request_card_client(r) for r in requests) or '<p class="form-help">Aucune demande pour le moment.</p>'
+    audit_type_options = "".join(f'<option value="{key}">{label}</option>' for key, label in AUDIT_TYPE_LABELS.items())
+    urgency_options = "".join(f'<option value="{key}" {"selected" if key == "normal" else ""}>{label}</option>' for key, label in URGENCY_LABELS.items())
+    return f"""
+    <h2 id="requests" class="section-title reveal">Demandes d'audit</h2>
+    <section class="split-grid reveal">
+        <article class="panel panel-wide">
+            <div class="panel-head">
+                <h2>Mes demandes ({len(requests)})</h2>
+                <small>Suivez l'état de vos demandes envoyées à YOps</small>
+            </div>
+            <div class="request-list">{cards}</div>
+        </article>
+        <form class="panel form-panel" method="post" action="/audit-requests">
+            <h2>Nouvelle demande</h2>
+            <label>Type d'audit<select name="audit_type" required>{audit_type_options}</select></label>
+            <label>Périmètre (scope)<textarea name="scope" rows="4" placeholder="Quels actifs, URLs, applications ?" required></textarea></label>
+            <label>Règles d'engagement<textarea name="rules" rows="3" placeholder="Comptes de test, fenêtre de tir, exclusions, contraintes..."></textarea></label>
+            <label>Urgence<select name="urgency">{urgency_options}</select></label>
+            <label>Date souhaitée<input name="target_date" type="date"></label>
+            <button class="primary-button" type="submit"><span>Envoyer la demande</span><span class="button-dot">↗</span></button>
+            <p class="form-help">Demandeur : {e(user.name)} - {e(client.name)}</p>
+        </form>
+    </section>
+    """
 
 
 def clients_page(user: SessionUser, clients, errors: list[str] | None = None) -> bytes:
@@ -444,16 +703,47 @@ def clients_page(user: SessionUser, clients, errors: list[str] | None = None) ->
             <label>Secteur<input name="sector" required></label>
             <label>Contact<input name="contact_name" required></label>
             <label>Email<input name="email" type="email" required></label>
-            <label>Telephone<input name="phone" required></label>
+            <label>Téléphone<input name="phone" required></label>
             <input type="hidden" name="status" value="active">
-            <button class="primary-button" type="submit"><span>Creer</span><span class="button-dot">↗</span></button>
+            <button class="primary-button" type="submit"><span>Créer</span><span class="button-dot">↗</span></button>
         </form>
     </section>
     """
     return layout("Clients", user, content, "clients")
 
 
-def client_detail_page(user: SessionUser, client, audits, vulnerabilities, risk) -> bytes:
+NOTE_KINDS = {
+    "note": ("Note", "neutral"),
+    "contact": ("Contact", "low"),
+    "alert": ("Alerte", "critical"),
+    "meeting": ("Réunion", "medium"),
+}
+
+
+def _note_icon(kind: str) -> str:
+    icons = {"note": "✎", "contact": "✆", "alert": "⚠", "meeting": "◷"}
+    return icons.get(kind, "✎")
+
+
+def client_detail_page(user: SessionUser, client, audits, vulnerabilities, risk, notes=None) -> bytes:
+    notes = notes or []
+    audit_options = "".join(f'<option value="{audit.id}">{e(audit.title)}</option>' for audit in audits)
+    create_vulnerability = ""
+    if user.role != "client":
+        create_vulnerability = f"""
+        <form class="panel form-panel" method="post" action="/vulnerabilities?return_to=/clients/{client.id}">
+            <h2>Ajouter une vulnérabilité</h2>
+            <label>Audit du client<select name="audit_id">{audit_options}</select></label>
+            <label>Titre<input name="title" required></label>
+            <label>Description<textarea name="description" required></textarea></label>
+            <label>Criticité<select name="severity"><option value="low">Faible</option><option value="medium">Moyenne</option><option value="high">Haute</option><option value="critical">Critique</option></select></label>
+            <label>CVSS<input name="cvss_score" type="number" min="0" max="10" step="0.1" value="7.0" required></label>
+            <label>Actif<input name="asset" required></label>
+            <label>Preuve<textarea name="evidence" required></textarea></label>
+            <label>Recommandation<textarea name="recommendation" required></textarea></label>
+            <button class="primary-button" type="submit"><span>Ajouter au client</span><span class="button-dot">↗</span></button>
+        </form>
+        """
     audit_rows = "".join(
         f"""
         <tr>
@@ -484,15 +774,15 @@ def client_detail_page(user: SessionUser, client, audits, vulnerabilities, risk)
     )
     content += f"""
     <section class="kpi-grid reveal">
-        <article class="kpi-card"><span>Score risque</span><strong>{risk.score}</strong></article>
-        <article class="kpi-card danger"><span>Critiques</span><strong>{risk.critical}</strong></article>
-        <article class="kpi-card"><span>Hautes</span><strong>{risk.high}</strong></article>
+        <article class="kpi-card"><span>Score risque</span><strong data-count="{risk.score}">{risk.score}</strong></article>
+        <article class="kpi-card danger"><span>Critiques</span><strong data-count="{risk.critical}">{risk.critical}</strong></article>
+        <article class="kpi-card"><span>Hautes</span><strong data-count="{risk.high}">{risk.high}</strong></article>
         <article class="kpi-card"><span>Niveau</span><strong>{e(risk.level)}</strong></article>
     </section>
     <section class="split-grid reveal">
         <article class="panel panel-wide">
             <div class="panel-head"><h2>Audits</h2></div>
-            <div class="table-wrap"><table><thead><tr><th>Mission</th><th>Type</th><th>Statut</th><th>Debut</th><th>Fin</th></tr></thead><tbody>{audit_rows}</tbody></table></div>
+            <div class="table-wrap"><table><thead><tr><th>Mission</th><th>Type</th><th>Statut</th><th>Début</th><th>Fin</th></tr></thead><tbody>{audit_rows}</tbody></table></div>
         </article>
         <article class="panel">
             <h2>Fiche client</h2>
@@ -500,16 +790,63 @@ def client_detail_page(user: SessionUser, client, audits, vulnerabilities, risk)
                 <dt>Secteur</dt><dd>{e(client.sector)}</dd>
                 <dt>Contact</dt><dd>{e(client.contact_name)}</dd>
                 <dt>Email</dt><dd>{e(client.email)}</dd>
-                <dt>Telephone</dt><dd>{e(client.phone)}</dd>
+                <dt>Téléphone</dt><dd>{e(client.phone)}</dd>
             </dl>
         </article>
     </section>
-    <article class="panel reveal">
-        <div class="panel-head"><h2>Vulnerabilites principales</h2><a href="/vulnerabilities">Registre complet</a></div>
-        <div class="table-wrap"><table><thead><tr><th>Titre</th><th>Criticite</th><th>Statut</th><th>CVSS</th></tr></thead><tbody>{vulnerability_rows}</tbody></table></div>
-    </article>
+    <section class="split-grid reveal">
+        <article class="panel panel-wide">
+            <div class="panel-head"><h2>Vulnérabilités principales</h2><a href="/vulnerabilities">Registre complet</a></div>
+            <div class="table-wrap"><table><thead><tr><th>Titre</th><th>Criticité</th><th>Statut</th><th>CVSS</th></tr></thead><tbody>{vulnerability_rows}</tbody></table></div>
+        </article>
+        {create_vulnerability}
+    </section>
+    {_notes_section(user, client, notes)}
     """
     return layout(client.name, user, content, "clients")
+
+
+def _notes_section(user: SessionUser, client, notes) -> str:
+    if user.role == "client":
+        return ""
+    timeline = "".join(
+        f"""
+        <li class="timeline-item kind-{e(note.kind)}">
+            <span class="timeline-marker" aria-hidden="true">{_note_icon(note.kind)}</span>
+            <div class="timeline-body">
+                <div class="timeline-meta">
+                    <span class="badge badge-{NOTE_KINDS.get(note.kind, ('Note','neutral'))[1]}">{NOTE_KINDS.get(note.kind, ('Note','neutral'))[0]}</span>
+                    <strong>{e(note.author_name)}</strong>
+                    <small>{e(note.created_at)}</small>
+                </div>
+                <p>{e(note.body)}</p>
+            </div>
+        </li>
+        """
+        for note in notes
+    )
+    empty = '<li class="timeline-empty">Aucune note pour ce client. Ajoutez le premier suivi ci-contre.</li>'
+    options = "".join(
+        f'<option value="{key}">{label}</option>' for key, (label, _) in NOTE_KINDS.items()
+    )
+    return f"""
+    <section id="notes" class="split-grid reveal notes-grid">
+        <article class="panel panel-wide">
+            <div class="panel-head">
+                <h2>Suivi & notes</h2>
+                <small>{len(notes)} entrée{'s' if len(notes) > 1 else ''}</small>
+            </div>
+            <ol class="timeline">{timeline or empty}</ol>
+        </article>
+        <form class="panel form-panel" method="post" action="/clients/{client.id}/notes">
+            <h2>Ajouter une note</h2>
+            <label>Type<select name="kind">{options}</select></label>
+            <label>Contenu<textarea name="body" rows="5" placeholder="Échange, alerte, décision, prochaine étape..." required></textarea></label>
+            <button class="primary-button" type="submit"><span>Enregistrer</span><span class="button-dot">↗</span></button>
+            <p class="form-help">Auteur : {e(user.name)}</p>
+        </form>
+    </section>
+    """
 
 
 def audits_page(user: SessionUser, audits) -> bytes:
@@ -540,45 +877,92 @@ def audit_detail_page(user: SessionUser, audit, vulnerabilities) -> bytes:
         for v in vulnerabilities
     )
     content = page_header(audit.title, f"{audit.client_name} · {audit.audit_type} · responsable {audit.owner_name}")
-    content += f'<article class="panel reveal"><div class="table-wrap"><table><thead><tr><th>Vulnerabilite</th><th>Criticite</th><th>Actif</th><th>Statut</th><th>CVSS</th></tr></thead><tbody>{rows}</tbody></table></div></article>'
+    content += f'<article class="panel reveal"><div class="table-wrap"><table><thead><tr><th>Vulnérabilité</th><th>Criticité</th><th>Actif</th><th>Statut</th><th>CVSS</th></tr></thead><tbody>{rows}</tbody></table></div></article>'
     return layout("Audit", user, content, "audits")
 
 
-def vulnerabilities_page(user: SessionUser, vulnerabilities, audits, query: dict, errors: list[str] | None = None) -> bytes:
+def vulnerabilities_page(user: SessionUser, vulnerabilities, audits, clients, query: dict, errors: list[str] | None = None) -> bytes:
+    selected_client = query.get("client", "").strip().lower()
+    search = query.get("q", "").strip().lower()
+    filtered = vulnerabilities
+    if selected_client:
+        filtered = [v for v in filtered if v.client_name.lower() == selected_client]
+    if search:
+        filtered = [v for v in filtered if search in v.title.lower() or search in v.asset.lower() or search in v.description.lower()]
+
+    next_status = {"ouverte": "en_cours", "en_cours": "corrigee", "corrigee": "ouverte", "acceptee": "ouverte"}
+    next_label = {"ouverte": "Démarrer", "en_cours": "Marquer corrigée", "corrigee": "Réouvrir", "acceptee": "Réouvrir"}
+    return_to = "/vulnerabilities" + (("?" + urlencode({k: v for k, v in query.items() if v})) if any(query.values()) else "")
+
     rows = "".join(
         f"""
         <tr>
-            <td>{e(v.title)}<small>{e(v.asset)}</small></td>
-            <td>{e(v.client_name)}</td>
+            <td>
+                <strong>{e(v.title)}</strong>
+                <small>{e(v.asset)} · {e(v.audit_title)}</small>
+            </td>
+            <td><a href="/clients/{_client_id_by_name(clients, v.client_name)}">{e(v.client_name)}</a></td>
             <td>{severity_badge(v.severity)}</td>
             <td>{status_badge(v.status)}</td>
             <td>{e(v.cvss_score)}</td>
+            <td class="row-actions">
+                <form method="post" action="/vulnerabilities/{v.id}/status">
+                    <input type="hidden" name="status" value="{next_status.get(v.status, 'en_cours')}">
+                    <input type="hidden" name="return_to" value="{e(return_to)}">
+                    <button class="inline-button" type="submit">{next_label.get(v.status, 'Avancer')}</button>
+                </form>
+            </td>
         </tr>
         """
-        for v in vulnerabilities
+        for v in filtered
     )
-    audit_options = "".join(f'<option value="{audit.id}">{e(audit.client_name)} - {e(audit.title)}</option>' for audit in audits)
+    if not rows:
+        rows = '<tr><td colspan="6" class="empty-row">Aucune vulnérabilité ne correspond à ces filtres.</td></tr>'
+
+    audit_options_by_client: dict[str, str] = {}
+    for audit in audits:
+        opt = f'<option value="{audit.id}">{e(audit.title)}</option>'
+        audit_options_by_client.setdefault(audit.client_name, "")
+        audit_options_by_client[audit.client_name] += opt
+    audit_optgroups = "".join(
+        f'<optgroup label="{e(client_name)}">{opts}</optgroup>'
+        for client_name, opts in sorted(audit_options_by_client.items())
+    )
+
+    client_chips = "".join(
+        f'<a class="chip {"is-active" if c.name.lower() == selected_client else ""}" href="/vulnerabilities?client={e(c.name)}">{e(c.name)}</a>'
+        for c in clients
+    )
+
     error_html = "".join(f'<div class="notice error">{e(error)}</div>' for error in (errors or []))
     filters = urlencode({key: value for key, value in query.items() if value})
-    content = page_header("Vulnerabilites", "Registre technique classe par criticite.")
+    content = page_header(
+        "Vulnérabilités",
+        f"Registre technique · {len(filtered)} sur {len(vulnerabilities)} affichées.",
+    )
     content += f"""
     <section class="filter-bar reveal">
-        <a class="chip" href="/vulnerabilities">Toutes</a>
-        <a class="chip" href="/vulnerabilities?severity=critical">Critiques</a>
-        <a class="chip" href="/vulnerabilities?severity=high">Hautes</a>
-        <a class="chip" href="/vulnerabilities?status=ouverte">Ouvertes</a>
+        <a class="chip {'is-active' if not any(query.values()) else ''}" href="/vulnerabilities">Toutes</a>
+        <a class="chip {'is-active' if query.get('severity') == 'critical' else ''}" href="/vulnerabilities?severity=critical">Critiques</a>
+        <a class="chip {'is-active' if query.get('severity') == 'high' else ''}" href="/vulnerabilities?severity=high">Hautes</a>
+        <a class="chip {'is-active' if query.get('status') == 'ouverte' else ''}" href="/vulnerabilities?status=ouverte">Ouvertes</a>
+        <span class="filter-divider"></span>
+        {client_chips}
+    </section>
+    <section class="filter-bar reveal">
+        <input class="search-input" type="search" placeholder="Rechercher par titre, actif ou description..." value="{e(query.get('q', ''))}" data-search-target="#vuln-table tbody tr">
     </section>
     <section class="split-grid reveal">
         <article class="panel panel-wide">
-            <div class="table-wrap"><table><thead><tr><th>Titre</th><th>Client</th><th>Criticite</th><th>Statut</th><th>CVSS</th></tr></thead><tbody>{rows}</tbody></table></div>
+            <div class="table-wrap"><table id="vuln-table"><thead><tr><th>Titre</th><th>Client</th><th>Criticité</th><th>Statut</th><th>CVSS</th><th></th></tr></thead><tbody>{rows}</tbody></table></div>
         </article>
         <form class="panel form-panel" method="post" action="/vulnerabilities?{filters}">
             <h2>Ajouter</h2>
             {error_html}
-            <label>Audit<select name="audit_id">{audit_options}</select></label>
+            <label>Audit (regroupé par client)<select name="audit_id" required>{audit_optgroups}</select></label>
             <label>Titre<input name="title" required></label>
             <label>Description<textarea name="description" required></textarea></label>
-            <label>Criticite<select name="severity"><option value="low">Faible</option><option value="medium">Moyenne</option><option value="high">Haute</option><option value="critical">Critique</option></select></label>
+            <label>Criticité<select name="severity"><option value="low">Faible</option><option value="medium">Moyenne</option><option value="high">Haute</option><option value="critical">Critique</option></select></label>
             <label>CVSS<input name="cvss_score" type="number" min="0" max="10" step="0.1" value="7.0" required></label>
             <label>Actif<input name="asset" required></label>
             <label>Preuve<textarea name="evidence" required></textarea></label>
@@ -587,7 +971,14 @@ def vulnerabilities_page(user: SessionUser, vulnerabilities, audits, query: dict
         </form>
     </section>
     """
-    return layout("Vulnerabilites", user, content, "vulnerabilities")
+    return layout("Vulnérabilités", user, content, "vulnerabilities")
+
+
+def _client_id_by_name(clients, name: str) -> int:
+    for c in clients:
+        if c.name == name:
+            return c.id
+    return 0
 
 
 def tickets_page(user: SessionUser, tickets) -> bytes:
@@ -603,8 +994,8 @@ def tickets_page(user: SessionUser, tickets) -> bytes:
         """
         for ticket in tickets
     )
-    content = page_header("Tickets", "Suivi operationnel des corrections.")
-    content += f'<article class="panel reveal"><div class="table-wrap"><table><thead><tr><th>Vulnerabilite</th><th>Priorite</th><th>Assigne</th><th>Echeance</th><th>Statut</th></tr></thead><tbody>{rows}</tbody></table></div></article>'
+    content = page_header("Tickets", "Suivi opérationnel des corrections.")
+    content += f'<article class="panel reveal"><div class="table-wrap"><table><thead><tr><th>Vulnérabilité</th><th>Priorité</th><th>Assigné</th><th>Échéance</th><th>Statut</th></tr></thead><tbody>{rows}</tbody></table></div></article>'
     return layout("Tickets", user, content, "tickets")
 
 
@@ -620,7 +1011,7 @@ def reports_page(user: SessionUser, reports) -> bytes:
         """
         for report in reports
     )
-    content = page_header("Rapports", "Syntheses exploitables pour le client et le management.")
+    content = page_header("Rapports", "Synthèses exploitables pour le client et le management.")
     content += f'<section class="report-grid reveal">{cards}</section>'
     return layout("Rapports", user, content, "reports")
 
@@ -630,11 +1021,11 @@ def users_page(user: SessionUser, users) -> bytes:
         f"<tr><td>{e(item.name)}</td><td>{e(item.email)}</td><td>{badge(item.role)}</td><td>{e(item.client_id or '-')}</td></tr>"
         for item in users
     )
-    content = page_header("Utilisateurs", "Comptes locaux de demonstration et roles applicatifs.")
-    content += f'<article class="panel reveal"><div class="table-wrap"><table><thead><tr><th>Nom</th><th>Email</th><th>Role</th><th>Client</th></tr></thead><tbody>{rows}</tbody></table></div></article>'
+    content = page_header("Utilisateurs", "Comptes locaux de démonstration et rôles applicatifs.")
+    content += f'<article class="panel reveal"><div class="table-wrap"><table><thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Client</th></tr></thead><tbody>{rows}</tbody></table></div></article>'
     return layout("Utilisateurs", user, content, "admin")
 
 
 def not_found_page(user: SessionUser | None) -> bytes:
-    content = page_header("Page introuvable", "La route demandee n'existe pas.")
+    content = page_header("Page introuvable", "La route demandée n'existe pas.")
     return layout("404", user, content)
