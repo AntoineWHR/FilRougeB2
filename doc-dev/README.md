@@ -15,8 +15,10 @@ L'application s'appelle :
 YOps Portal
 ```
 
-Elle sert a gerer l'activite d'une petite entreprise de cybersecurite :
+Elle sert a presenter et gerer l'activite d'une petite entreprise de cybersecurite :
 
+- landing page publique ;
+- demande d'audit / inscription client ;
 - clients ;
 - audits ;
 - vulnerabilites ;
@@ -31,19 +33,19 @@ C'est une application metier qui montre une logique d'entreprise cyber.
 
 | Couche | Choix |
 |---|---|
-| Backend | Laravel / PHP |
-| Frontend | Blade + CSS |
+| Backend | Python standard library |
+| Frontend | HTML/CSS/JS sans framework |
 | Base de donnees | SQLite local |
-| Serveur web | Serveur local Laravel |
-| Authentification | Auth Laravel |
+| Serveur web | Serveur HTTP local Python |
+| Authentification | Sessions locales + mots de passe hashes |
 | Versioning | GitHub |
 
 Pourquoi ce choix :
 
 - l'application reste simple a lancer pendant l'oral ;
 - aucune dependance reseau ne peut casser la demonstration DEV ;
-- SQLite suffit pour montrer les tables, les migrations et les donnees ;
-- la stack reste realiste pour un projet B2.
+- SQLite suffit pour montrer les tables, les relations et les donnees ;
+- Python permet aussi de couvrir l'analyse de donnees demandee dans la grille DEV.
 
 ## Architecture DEV cible
 
@@ -55,7 +57,7 @@ PC local
 http://127.0.0.1:8000
    |
    v
-Laravel
+Python YOps Portal
 SQLite local
 ```
 
@@ -70,11 +72,14 @@ L'infra montre le SI d'entreprise ; l'application locale montre la partie develo
 | [02_MODELE_DONNEES.md](02_MODELE_DONNEES.md) | Tables et relations |
 | [03_ROADMAP_DEV.md](03_ROADMAP_DEV.md) | Ordre de realisation |
 | [04_DEMO_DEV_ORAL.md](04_DEMO_DEV_ORAL.md) | Scenario de demonstration |
+| [05_ORAL_DEV_HUMAIN.md](05_ORAL_DEV_HUMAIN.md) | Script oral simple et humain |
 
 ## Minimum viable pour l'oral DEV
 
 Pour avoir une partie DEV defendable, il faut au minimum :
 
+- une landing page ;
+- un formulaire d'inscription client ;
 - une page de connexion ;
 - un tableau de bord ;
 - une liste de clients ;
@@ -83,6 +88,7 @@ Pour avoir une partie DEV defendable, il faut au minimum :
 - des badges de criticite ;
 - une base SQLite avec des donnees de demonstration ;
 - au moins deux roles : admin et analyste.
+- un module Python d'analyse de donnees.
 
 ## Version ideale
 

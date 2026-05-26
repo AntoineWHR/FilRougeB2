@@ -6,12 +6,12 @@ Objectif : avoir une application qui demarre en local et se connecte a sa base l
 
 Taches :
 
-1. creer le projet Laravel ;
-2. configurer `.env` avec SQLite ;
-3. creer le fichier local `database/database.sqlite` ;
-4. creer les migrations principales ;
-5. creer les seeders de demonstration ;
-6. ajouter l'authentification.
+1. creer le dossier `app-yops-portal` ;
+2. configurer SQLite local ;
+3. creer le schema relationnel ;
+4. ajouter les donnees de demonstration ;
+5. ajouter l'authentification locale ;
+6. lancer le serveur Python.
 
 Validation :
 
@@ -25,11 +25,11 @@ Objectif : gerer les donnees cyber.
 
 Taches :
 
-1. CRUD clients ;
-2. CRUD audits ;
-3. CRUD vulnerabilites ;
+1. gestion clients ;
+2. consultation audits ;
+3. registre vulnerabilites avec ajout ;
 4. tickets de remediation ;
-5. commentaires simples.
+5. rapports executifs.
 
 Validation :
 
@@ -47,12 +47,12 @@ Taches :
 2. role analyste SOC ;
 3. role commercial ;
 4. role client ;
-5. restrictions dans les controleurs ou policies.
+5. controle d'acces simple dans les routes.
 
 Validation :
 
 ```text
-Un client ne voit que ses rapports. Un commercial ne modifie pas les vulnerabilites techniques.
+Un client ne voit que son espace client. Il ne voit pas la liste globale des clients ni les donnees des autres entreprises.
 ```
 
 ## Phase 4 - Dashboard et rapport
@@ -62,10 +62,10 @@ Objectif : rendre la demo claire.
 Taches :
 
 1. cartes statistiques ;
-2. graphiques simples par criticite ;
+2. repartition par criticite ;
 3. page detail audit ;
 4. synthese executive ;
-5. export PDF si le temps le permet.
+5. analyse Python en CSV/JSON.
 
 Validation :
 
@@ -79,11 +79,11 @@ Objectif : lancer l'application sur le PC pour la demonstration.
 
 Taches :
 
-1. installer les dependances PHP ;
-2. configurer `.env` en local ;
-3. lancer les migrations et seeders ;
-4. demarrer le serveur local Laravel ;
-5. tester depuis `http://127.0.0.1:8000`.
+1. verifier Python 3 ;
+2. lancer `python3 run.py` ;
+3. ouvrir `http://127.0.0.1:8000` ;
+4. tester la connexion ;
+5. lancer `python3 analytics/analyze_yops.py`.
 
 Validation :
 
@@ -95,12 +95,15 @@ L'application est accessible en local sur le PC et utilise SQLite.
 
 Pour l'oral, priorite a :
 
-1. login ;
-2. dashboard ;
-3. clients ;
-4. audits ;
-5. vulnerabilites ;
-6. donnees de demo ;
-7. roles simples.
+1. landing page ;
+2. inscription client ;
+3. login ;
+4. separation espace client / back-office ;
+5. dashboard ;
+6. clients ;
+7. audits ;
+8. vulnerabilites ;
+9. donnees de demo ;
+10. roles simples.
 
 Le reste est un bonus.

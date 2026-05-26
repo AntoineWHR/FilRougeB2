@@ -6,6 +6,7 @@ YOps Portal est une application web interne pour suivre les missions cyber d'une
 
 Elle doit permettre de centraliser :
 
+- les demandes entrantes de clients ;
 - les clients ;
 - les audits ;
 - les vulnerabilites ;
@@ -19,16 +20,39 @@ Elle doit permettre de centraliser :
 | Administrateur | Gerer l'application et les utilisateurs |
 | Analyste SOC | Creer les audits, vulnerabilites et tickets |
 | Commercial | Suivre les clients et l'avancement des audits |
-| Client | Consulter ses rapports et corrections |
+| Client | Consulter seulement ses audits, rapports et corrections |
 
 ## Fonctionnalites principales
+
+### Site public
+
+- presenter YOps et ses services ;
+- expliquer la methode de travail ;
+- afficher des offres lisibles ;
+- proposer un appel a l'action vers une demande d'audit.
+
+### Inscription client
+
+- creation d'une demande client ;
+- creation d'un compte client lie a l'entreprise ;
+- validation des champs obligatoires ;
+- refus d'un email deja utilise.
 
 ### Authentification
 
 - connexion avec email et mot de passe ;
 - mot de passe hashe ;
 - deconnexion ;
-- protection CSRF.
+- sessions locales ;
+- requetes SQL parametrees.
+
+### Separation des interfaces
+
+- un visiteur voit le site public ;
+- un client connecte voit uniquement son espace client ;
+- un administrateur ou analyste voit le back-office ;
+- un client ne peut pas ouvrir la liste globale des clients ;
+- un client ne peut pas consulter les donnees d'une autre entreprise.
 
 ### Tableau de bord
 
@@ -55,8 +79,7 @@ Actions :
 
 - lister ;
 - creer ;
-- modifier ;
-- archiver.
+- afficher le detail client.
 
 ### Audits
 
@@ -72,7 +95,6 @@ Champs :
 
 Actions :
 
-- creer un audit ;
 - associer un audit a un client ;
 - suivre son avancement.
 
@@ -114,14 +136,22 @@ Fonctions :
 
 - afficher une synthese d'audit ;
 - filtrer les vulnerabilites par criticite ;
-- afficher une synthese executive ;
-- exporter en PDF si possible.
+- afficher une synthese executive.
+
+### Analyse de donnees
+
+Fonctions :
+
+- calculer la repartition des vulnerabilites par criticite ;
+- calculer le risque par client ;
+- identifier les tickets en retard ;
+- sortir des fichiers CSV et JSON exploitables.
 
 ## Regles de securite applicative
 
 - validation cote serveur ;
 - acces par role ;
-- un client ne voit que ses propres rapports ;
+- un client ne voit que ses propres audits, rapports, tickets et vulnerabilites ;
 - un commercial ne modifie pas les vulnerabilites techniques ;
 - un analyste SOC ne gere pas les comptes administrateurs ;
 - pas de mot de passe ou secret dans Git.

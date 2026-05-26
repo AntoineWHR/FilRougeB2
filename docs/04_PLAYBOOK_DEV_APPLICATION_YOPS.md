@@ -6,6 +6,8 @@ Developper une application web YOps pour une entreprise de cybersecurite.
 
 L'application doit permettre de gerer :
 
+- presentation commerciale des services YOps ;
+- demandes d'audit client ;
 - clients ;
 - audits ;
 - vulnerabilites ;
@@ -17,11 +19,11 @@ L'application doit permettre de gerer :
 
 | Couche | Choix |
 |---|---|
-| Backend | Laravel/PHP |
-| Frontend | Blade + CSS framework simple, ou Laravel Breeze |
+| Backend | Python standard library |
+| Frontend | HTML/CSS/JS sans framework |
 | Base de donnees | SQLite local |
-| Serveur web | Serveur local Laravel |
-| Authentification | Laravel Breeze ou auth Laravel |
+| Serveur web | Serveur local Python |
+| Authentification | Sessions locales |
 | Versioning | Git |
 
 La partie DEV est prevue pour tourner **uniquement en local sur le PC**.  
@@ -34,9 +36,40 @@ Elle ne depend pas de Proxmox, Tailscale ou des serveurs Linux du lab.
 | Admin | Acces complet |
 | Analyste SOC | Gestion audits, vulnerabilites, tickets, rapports |
 | Commercial | Gestion clients, consultation et suivi des audits |
-| Client | Consultation de ses rapports et tickets |
+| Client | Consultation limitee a ses audits, tickets, vulnerabilites et rapports |
 
 ## Modules fonctionnels
+
+### Site public
+
+Pages et blocs :
+
+- hero clair pour expliquer l'offre ;
+- services cyber vendus par YOps ;
+- methode de travail ;
+- offres commerciales ;
+- CTA vers inscription / demande d'audit.
+
+### Inscription client
+
+Champs :
+
+- entreprise ;
+- secteur ;
+- contact ;
+- email ;
+- telephone ;
+- mot de passe.
+
+### Separation client / back-office
+
+Regles :
+
+- un visiteur accede uniquement au site public ;
+- un client connecte accede a son espace client ;
+- un client ne voit pas `/clients`, `/vulnerabilities`, `/tickets` globaux ;
+- un client ne peut pas ouvrir la fiche d'une autre entreprise ;
+- un administrateur garde l'acces au back-office complet.
 
 ### Tableau de bord
 
@@ -119,7 +152,6 @@ audits
 vulnerabilities
 remediation_tickets
 reports
-comments
 ```
 
 Relations :
@@ -135,6 +167,8 @@ Relations :
 | Page | URL indicative |
 |---|---|
 | Login | `/login` |
+| Landing page | `/` |
+| Inscription client | `/register` |
 | Dashboard | `/dashboard` |
 | Clients | `/clients` |
 | Detail client | `/clients/{id}` |
@@ -179,10 +213,10 @@ Absence de sauvegarde testee
 
 Backend :
 
-- code organise par modeles, controleurs, policies si possible ;
+- code organise par modeles, repositories, services et vues ;
 - validations de formulaire ;
-- migrations propres ;
-- seeders pour la demo ;
+- schema SQL propre ;
+- donnees de demonstration ;
 - separation des roles.
 
 Frontend :
@@ -197,8 +231,9 @@ Frontend :
 Securite :
 
 - mots de passe hashes ;
-- CSRF actif ;
+- sessions locales ;
 - acces par role ;
+- cloisonnement de l'espace client ;
 - validation cote serveur ;
 - pas d'informations sensibles dans Git.
 
@@ -207,25 +242,15 @@ Securite :
 Sur le PC :
 
 ```bash
-git clone <repo> yops
-cd yops
-composer install
-cp .env.example .env
-php artisan key:generate
-touch database/database.sqlite
-php artisan migrate --seed
-php artisan serve
+cd app-yops-portal
+python3 run.py
 ```
 
-Variables `.env` :
+Analyse de donnees :
 
-```env
-APP_NAME=YOps
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://127.0.0.1:8000
-
-DB_CONNECTION=sqlite
+```bash
+cd app-yops-portal
+python3 analytics/analyze_yops.py
 ```
 
 ## Tests fonctionnels
@@ -233,10 +258,11 @@ DB_CONNECTION=sqlite
 - un admin peut creer un client ;
 - un analyste SOC peut creer une vulnerabilite ;
 - un commercial ne peut pas modifier une vulnerabilite critique ;
-- un client ne voit que ses propres rapports ;
+- un client ne voit que ses propres audits, tickets, vulnerabilites et rapports ;
 - le dashboard affiche les statistiques ;
 - les formulaires refusent les champs obligatoires vides ;
-- l'application fonctionne en local sur `http://127.0.0.1:8000`.
+- l'application fonctionne en local sur `http://127.0.0.1:8000` ;
+- le module Python genere des rapports CSV/JSON.
 
 ## Demonstration DEV
 

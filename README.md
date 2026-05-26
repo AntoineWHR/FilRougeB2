@@ -267,7 +267,7 @@ Ameliorations prevues :
 - Ajouter un reverse proxy pour acceder aux services avec des noms DNS propres.
 - Automatiser la planification des sauvegardes Proxmox.
 - Ajouter une partie cloud/hybride documentee pour repondre au sujet.
-- Developper l'application web metier YOps.
+- Continuer a enrichir l'application web metier YOps.
 
 ## Arborescence du depot
 
@@ -285,7 +285,14 @@ Ameliorations prevues :
 |   |-- 01_CAHIER_DES_CHARGES.md
 |   |-- 02_MODELE_DONNEES.md
 |   |-- 03_ROADMAP_DEV.md
-|   `-- 04_DEMO_DEV_ORAL.md
+|   |-- 04_DEMO_DEV_ORAL.md
+|   `-- 05_ORAL_DEV_HUMAIN.md
+|-- app-yops-portal/
+|   |-- README.md
+|   |-- run.py
+|   |-- analytics/
+|   |-- public/
+|   `-- yops_portal/
 |-- docs/
 |   |-- 00_PLAN_GLOBAL_YOPS.md
 |   |-- 01_PLAYBOOK_INFRA_PROXMOX_PFSENSE_TAILSCALE.md

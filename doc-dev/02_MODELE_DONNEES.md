@@ -10,7 +10,6 @@ audits
 vulnerabilities
 remediation_tickets
 reports
-comments
 ```
 
 ## Relations
@@ -21,7 +20,6 @@ Un audit possede plusieurs vulnerabilites.
 Une vulnerabilite peut avoir un ticket de remediation.
 Un audit peut avoir un rapport.
 Un utilisateur peut etre responsable d'un audit ou d'un ticket.
-Un commentaire appartient a une vulnerabilite ou a un ticket.
 ```
 
 ## Structure simplifiee
@@ -35,6 +33,7 @@ Un commentaire appartient a une vulnerabilite ou a un ticket.
 | email | string | Connexion |
 | password | string | Mot de passe hashe |
 | role_id | foreign key | Role |
+| client_id | foreign key nullable | Client lie au compte si role client |
 
 ### roles
 
@@ -54,6 +53,7 @@ Un commentaire appartient a une vulnerabilite ou a un ticket.
 | email | string |
 | phone | string |
 | status | string |
+| discovered_at | date |
 
 ### audits
 

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 680" role="img" aria-labelledby="title desc">
+  <title id="title">Illustration de portail cyber YOps</title>
+  <desc id="desc">Tableau de bord d'audit cyber avec score de risque, controles et rapport client.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0f3f3d"/>
+      <stop offset="0.55" stop-color="#145f58"/>
+      <stop offset="1" stop-color="#b86f34"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fffdf8" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#f3ecdf" stop-opacity="0.86"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="22" stdDeviation="22" flood-color="#1d160e" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <rect width="920" height="680" rx="48" fill="url(#bg)"/>
+  <circle cx="740" cy="88" r="150" fill="#fff4df" opacity="0.16"/>
+  <circle cx="128" cy="584" r="220" fill="#081b1a" opacity="0.18"/>
+  <g opacity="0.16">
+    <path d="M75 164h770M75 252h770M75 340h770M75 428h770M75 516h770" stroke="#fff" stroke-width="1"/>
+    <path d="M164 72v536M300 72v536M436 72v536M572 72v536M708 72v536" stroke="#fff" stroke-width="1"/>
+  </g>
+  <g filter="url(#soft-shadow)">
+    <rect x="92" y="92" width="450" height="500" rx="34" fill="url(#card)"/>
+    <rect x="124" y="128" width="156" height="20" rx="10" fill="#173f3d"/>
+    <rect x="124" y="168" width="350" height="10" rx="5" fill="#d9d0c1"/>
+    <rect x="124" y="190" width="286" height="10" rx="5" fill="#e4dacb"/>
+    <rect x="124" y="240" width="164" height="130" rx="26" fill="#123f3c"/>
+    <text x="150" y="292" fill="#fffdf8" font-size="48" font-family="Arial, sans-serif" font-weight="700">82</text>
+    <text x="150" y="324" fill="#d7f2ec" font-size="18" font-family="Arial, sans-serif">score risque</text>
+    <rect x="314" y="240" width="166" height="130" rx="26" fill="#fff8ed"/>
+    <circle cx="362" cy="306" r="34" fill="#9f2d2d" opacity="0.14"/>
+    <path d="M362 276l28 55h-56z" fill="#9f2d2d"/>
+    <rect x="124" y="408" width="356" height="18" rx="9" fill="#eee4d6"/>
+    <rect x="124" y="408" width="280" height="18" rx="9" fill="#145f58"/>
+    <rect x="124" y="450" width="356" height="18" rx="9" fill="#eee4d6"/>
+    <rect x="124" y="450" width="222" height="18" rx="9" fill="#b86f34"/>
+    <rect x="124" y="492" width="356" height="18" rx="9" fill="#eee4d6"/>
+    <rect x="124" y="492" width="146" height="18" rx="9" fill="#536b2f"/>
+  </g>
+  <g filter="url(#soft-shadow)">
+    <rect x="510" y="176" width="294" height="332" rx="34" fill="#fffdf8" opacity="0.94"/>
+    <rect x="548" y="214" width="116" height="18" rx="9" fill="#173f3d"/>
+    <rect x="548" y="258" width="218" height="12" rx="6" fill="#e2d8c8"/>
+    <rect x="548" y="288" width="168" height="12" rx="6" fill="#e2d8c8"/>
+    <g transform="translate(548 342)">
+      <rect width="218" height="26" rx="13" fill="#f1e5d6"/>
+      <rect width="158" height="26" rx="13" fill="#145f58"/>
+    </g>
+    <g transform="translate(548 394)">
+      <rect width="218" height="26" rx="13" fill="#f1e5d6"/>
+      <rect width="102" height="26" rx="13" fill="#b86f34"/>
+    </g>
+    <g transform="translate(548 446)">
+      <rect width="218" height="26" rx="13" fill="#f1e5d6"/>
+      <rect width="72" height="26" rx="13" fill="#536b2f"/>
+    </g>
+  </g>
+  <g transform="translate(654 72)" filter="url(#soft-shadow)">
+    <rect width="176" height="92" rx="28" fill="#fffdf8"/>
+    <circle cx="48" cy="46" r="22" fill="#145f58"/>
+    <path d="M42 46l5 7 13-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="82" y="42" fill="#173f3d" font-size="18" font-family="Arial, sans-serif" font-weight="700">Audit</text>
+    <text x="82" y="64" fill="#7b7366" font-size="14" font-family="Arial, sans-serif">pret</text>
+  </g>
+</svg>

@@ -134,17 +134,19 @@ Enchainer :
 
 Montrer rapidement :
 
-- migrations ;
-- seeders ;
+- schema SQLite ;
+- donnees de demonstration ;
 - modeles ;
-- controleurs ;
+- repositories ;
+- services metier ;
 - validations ;
-- roles.
+- roles ;
+- exports analytics CSV/JSON.
 
 Message :
 
 ```text
-Le code suit une architecture MVC Laravel, avec separation des responsabilites, validations serveur et gestion des droits par role.
+Le code est separe en couches simples : modeles, repositories SQL, services metier et vues. La base est locale en SQLite et le module Python d'analyse produit des exports CSV/JSON.
 ```
 
 ## Checklist avant l'oral
@@ -211,4 +213,3 @@ Reponse :
 ```text
 Linux est utilise pour les services applicatifs, la base de donnees et la supervision. Cela montre une infrastructure mixte realiste, avec Windows pour l'identite et Linux pour les services web.
 ```
-
