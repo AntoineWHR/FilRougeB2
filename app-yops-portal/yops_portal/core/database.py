@@ -211,7 +211,12 @@ def create_schema(db: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS report_deliveries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             client_id INTEGER NOT NULL,
+            audit_id INTEGER,
+            vulnerability_id INTEGER,
             sent_by INTEGER NOT NULL,
+            kind TEXT NOT NULL DEFAULT 'remediation',
+            verdict TEXT,
+            admin_message TEXT NOT NULL DEFAULT '',
             filename TEXT NOT NULL,
             file_path TEXT NOT NULL,
             vuln_count INTEGER NOT NULL DEFAULT 0,
@@ -219,12 +224,25 @@ def create_schema(db: sqlite3.Connection) -> None:
             delivered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             read_at TEXT,
             FOREIGN KEY (client_id) REFERENCES clients(id),
+            FOREIGN KEY (audit_id) REFERENCES audits(id),
+            FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id),
             FOREIGN KEY (sent_by) REFERENCES users(id)
         );
 
         CREATE INDEX IF NOT EXISTS idx_deliveries_client ON report_deliveries(client_id);
         """
     )
+    _ensure_column(db, "report_deliveries", "audit_id", "INTEGER")
+    _ensure_column(db, "report_deliveries", "vulnerability_id", "INTEGER")
+    _ensure_column(db, "report_deliveries", "kind", "TEXT NOT NULL DEFAULT 'remediation'")
+    _ensure_column(db, "report_deliveries", "verdict", "TEXT")
+    _ensure_column(db, "report_deliveries", "admin_message", "TEXT NOT NULL DEFAULT ''")
+
+
+def _ensure_column(db: sqlite3.Connection, table: str, column: str, declaration: str) -> None:
+    existing = {row["name"] for row in db.execute(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {declaration}")
 
 
 def seed_database(db: sqlite3.Connection) -> None:

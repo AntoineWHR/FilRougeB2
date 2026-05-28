@@ -50,7 +50,7 @@ class Services:
         self.registration = RegistrationService(self.clients, self.users)
         self.risk = ClientRiskService(self.base)
         self.dashboard = DashboardService(self.base, self.risk)
-        self.report_delivery = ReportDeliveryService(self.vulnerabilities, self.clients, self.deliveries, PDF_STORAGE_DIR)
+        self.report_delivery = ReportDeliveryService(self.vulnerabilities, self.clients, self.audits, self.deliveries, self.base, PDF_STORAGE_DIR)
 
 
 class YOpsApplication:
@@ -142,10 +142,23 @@ class YOpsApplication:
             if user.role == "client" and audit.client_id != user.client_id:
                 return self.redirect(request, "/dashboard")
             vulnerabilities = self.services.vulnerabilities.list_for_audit(audit.id)
-            return self.respond(request, html.audit_detail_page(user, audit, vulnerabilities))
+            audit_deliveries = [d for d in self.services.deliveries.list_for_client(audit.client_id) if d.audit_id == audit.id]
+            return self.respond(request, html.audit_detail_page(user, audit, vulnerabilities, audit_deliveries))
         if path == "/vulnerabilities":
             if user.role == "client":
-                return self.redirect(request, "/dashboard")
+                if user.client_id is None:
+                    return self.redirect(request, "/dashboard")
+                client = self.services.clients.find(user.client_id)
+                if client is None:
+                    return self.redirect(request, "/dashboard")
+                return self.respond(
+                    request,
+                    html.client_vulnerabilities_page(
+                        user,
+                        client,
+                        self.services.vulnerabilities.list_for_client(client.id),
+                    ),
+                )
             return self.respond(
                 request,
                 html.vulnerabilities_page(
@@ -220,6 +233,19 @@ class YOpsApplication:
             return self.redirect(request, "/login", cookie="yops_session=deleted; Max-Age=0; Path=/")
         if user is None:
             return self.redirect(request, "/login")
+        if path.startswith("/client/vulnerabilities/") and path.endswith("/fixed"):
+            if user.role != "client" or user.client_id is None:
+                return self.redirect(request, "/dashboard")
+            try:
+                vuln_id = int(path.split("/")[3])
+            except (ValueError, IndexError):
+                return self.redirect(request, "/vulnerabilities")
+            vuln = self.services.vulnerabilities.find(vuln_id)
+            if vuln is None or vuln["client_id"] != user.client_id:
+                return self.redirect(request, "/vulnerabilities")
+            if vuln["status"] in ("ouverte", "en_cours"):
+                self.services.vulnerabilities.update_status(vuln_id, "a_verifier")
+            return self.redirect(request, "/vulnerabilities")
         if path == "/audit-requests" and user.role == "client":
             if user.client_id is None:
                 return self.redirect(request, "/dashboard")
@@ -263,6 +289,13 @@ class YOpsApplication:
                 return self.redirect(request, "/dashboard")
             self.services.report_delivery.deliver(client_id, user.id, user.name)
             return self.redirect(request, "/dashboard#deliver")
+        if path.startswith("/audits/") and path.endswith("/close"):
+            try:
+                audit_id = int(path.split("/")[2])
+            except ValueError:
+                return self.redirect(request, "/audits")
+            self.services.report_delivery.close_audit_and_deliver(audit_id, user.id, user.name)
+            return self.redirect(request, f"/audits/{audit_id}")
         if path.startswith("/audit-requests/") and path.endswith("/respond"):
             try:
                 req_id = int(path.split("/")[2])
@@ -318,10 +351,19 @@ class YOpsApplication:
                 return self.redirect(request, "/vulnerabilities")
             vuln = self.services.vulnerabilities.find(vuln_id)
             status = data.get("status", "")
-            if vuln is not None and status in ("ouverte", "en_cours", "corrigee", "acceptee"):
+            if vuln is not None and status in ("ouverte", "en_cours", "a_verifier", "corrigee", "acceptee"):
                 self.services.vulnerabilities.update_status(vuln_id, status)
             return_to = data.get("return_to") or "/vulnerabilities"
             return self.redirect(request, self._safe_return_to(return_to))
+        if path.startswith("/vulnerabilities/") and path.endswith("/verify"):
+            try:
+                vuln_id = int(path.split("/")[2])
+            except ValueError:
+                return self.redirect(request, "/vulnerabilities")
+            verdict = data.get("verdict", "")
+            message = data.get("message", "").strip()
+            self.services.report_delivery.verify_and_deliver(vuln_id, verdict, message, user.id, user.name)
+            return self.redirect(request, self._safe_return_to(data.get("return_to") or "/vulnerabilities"))
         if path.startswith("/vulnerabilities/") and path.endswith("/score"):
             try:
                 vuln_id = int(path.split("/")[2])

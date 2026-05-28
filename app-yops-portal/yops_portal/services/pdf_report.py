@@ -29,7 +29,15 @@ PALETTE = {
 }
 
 SEVERITY_LABEL = {"critical": "CRITIQUE", "high": "HAUTE", "medium": "MOYENNE", "low": "FAIBLE"}
-STATUS_LABEL = {"ouverte": "Ouverte", "en_cours": "En cours", "corrigee": "Corrigée", "acceptee": "Acceptée"}
+STATUS_LABEL = {"ouverte": "Ouverte", "en_cours": "En cours", "a_verifier": "À vérifier", "corrigee": "Corrigée", "acceptee": "Acceptée"}
+
+VERDICT_LABEL = {"validated": "CORRECTION VALIDÉE", "rejected": "CORRECTION NON VALIDÉE", "bypass": "BYPASS IDENTIFIÉ"}
+VERDICT_COLOR = {"validated": PALETTE["medium"], "rejected": PALETTE["high"], "bypass": PALETTE["critical"]}
+VERDICT_NEXT = {
+    "validated": "La vulnérabilité est marquée corrigée. Aucune action supplémentaire requise.",
+    "rejected": "La correction est insuffisante. La vulnérabilité repasse en cours côté client.",
+    "bypass": "Un bypass de votre correctif a été identifié. La vulnérabilité est réouverte avec contexte ci-dessous.",
+}
 
 HELV_WIDTHS_BASE = {
     " ": 278, "!": 278, "\"": 355, "#": 556, "$": 556, "%": 889, "&": 667, "'": 191,
@@ -215,8 +223,10 @@ def build_remediation_report(vulnerabilities: Iterable, generated_by: str, scope
     pdf = PDFBuilder()
 
     title = f"Rapport de remédiation — {scope}" if scope else "Vulnérabilités à corriger"
-    pdf.draw_text(MARGIN_X, pdf.cursor_y, title, size=22, bold=True, color=PALETTE["ink"])
-    pdf.cursor_y -= 24
+    for line in wrap_text(title, CONTENT_W, size=22, bold=True):
+        pdf.draw_text(MARGIN_X, pdf.cursor_y, line, size=22, bold=True, color=PALETTE["ink"])
+        pdf.cursor_y -= 26
+    pdf.cursor_y -= 2
     subtitle = f"Généré le {date.today().strftime('%d/%m/%Y')} · par {generated_by} · {len(vulns)} entrée{'s' if len(vulns) > 1 else ''}"
     pdf.draw_text(MARGIN_X, pdf.cursor_y, subtitle, size=10, color=PALETTE["muted"])
     pdf.cursor_y -= 24
@@ -247,6 +257,70 @@ def build_remediation_report(vulnerabilities: Iterable, generated_by: str, scope
 
     for vuln in vulns:
         _draw_vuln_card(pdf, vuln)
+
+    return pdf.build()
+
+
+def build_verification_report(vuln, verdict: str, admin_message: str, admin_name: str, client_name: str, summary: dict | None = None) -> bytes:
+    pdf = PDFBuilder()
+    pdf.draw_text(MARGIN_X, pdf.cursor_y, "Vérification de correction", size=22, bold=True, color=PALETTE["ink"])
+    pdf.cursor_y -= 26
+    subtitle = f"{client_name} · le {date.today().strftime('%d/%m/%Y')} · par {admin_name}"
+    pdf.draw_text(MARGIN_X, pdf.cursor_y, subtitle, size=10, color=PALETTE["muted"])
+    pdf.cursor_y -= 26
+
+    verdict_color = VERDICT_COLOR.get(verdict, PALETTE["muted"])
+    verdict_label = VERDICT_LABEL.get(verdict, verdict.upper())
+    block_h = 56
+    pdf.fill_rect(MARGIN_X, pdf.cursor_y - block_h, CONTENT_W, block_h, verdict_color)
+    pdf.draw_text(MARGIN_X + 18, pdf.cursor_y - 22, "VERDICT YOPS", size=9, bold=True, color=PALETTE["paper"])
+    pdf.draw_text(MARGIN_X + 18, pdf.cursor_y - 44, verdict_label, size=18, bold=True, color=PALETTE["paper"])
+    pdf.cursor_y -= block_h + 22
+
+    pdf.draw_text(MARGIN_X, pdf.cursor_y, "Vulnérabilité concernée", size=11, bold=True, color=PALETTE["ink"])
+    pdf.cursor_y -= 6
+    pdf.rule(pdf.cursor_y)
+    pdf.cursor_y -= 18
+    _draw_vuln_card(pdf, vuln)
+
+    pdf.ensure_space(120)
+    pdf.draw_text(MARGIN_X, pdf.cursor_y, "Décision et message de l'analyste", size=11, bold=True, color=PALETTE["ink"])
+    pdf.cursor_y -= 6
+    pdf.rule(pdf.cursor_y)
+    pdf.cursor_y -= 18
+
+    message = admin_message.strip() or "Aucun message complémentaire."
+    for line in wrap_text(message, CONTENT_W - 12, size=10):
+        pdf.draw_text(MARGIN_X + 12, pdf.cursor_y, line, size=10, color=PALETTE["ink"])
+        pdf.cursor_y -= _line_height(10)
+    pdf.cursor_y -= 8
+
+    next_step = VERDICT_NEXT.get(verdict, "")
+    pdf.draw_text(MARGIN_X, pdf.cursor_y, "Étapes suivantes", size=11, bold=True, color=PALETTE["ink"])
+    pdf.cursor_y -= 6
+    pdf.rule(pdf.cursor_y)
+    pdf.cursor_y -= 18
+    for line in wrap_text(next_step, CONTENT_W - 12, size=10):
+        pdf.draw_text(MARGIN_X + 12, pdf.cursor_y, line, size=10, color=PALETTE["ink"])
+        pdf.cursor_y -= _line_height(10)
+    pdf.cursor_y -= 8
+
+    if summary:
+        pdf.ensure_space(70)
+        pdf.draw_text(MARGIN_X, pdf.cursor_y, "Récapitulatif du portefeuille de vulnérabilités", size=11, bold=True, color=PALETTE["ink"])
+        pdf.cursor_y -= 6
+        pdf.rule(pdf.cursor_y)
+        pdf.cursor_y -= 18
+        kpi_w = (CONTENT_W - 18) / 4
+        kpi_h = 50
+        for i, key in enumerate(("ouverte", "en_cours", "a_verifier", "corrigee")):
+            x = MARGIN_X + i * (kpi_w + 6)
+            y = pdf.cursor_y - kpi_h
+            pdf.fill_rect(x, y, kpi_w, kpi_h, PALETTE["paper"])
+            pdf.fill_rect(x, y, 3, kpi_h, PALETTE["ink"])
+            pdf.draw_text(x + 14, y + kpi_h - 16, STATUS_LABEL.get(key, key).upper(), size=8, bold=True, color=PALETTE["muted"])
+            pdf.draw_text(x + 14, y + 12, str(summary.get(key, 0)), size=20, bold=True, color=PALETTE["ink"])
+        pdf.cursor_y -= kpi_h + 12
 
     return pdf.build()
 

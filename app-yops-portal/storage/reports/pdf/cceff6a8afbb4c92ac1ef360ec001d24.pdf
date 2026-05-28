@@ -1,0 +1,87 @@
+%PDF-1.4
+%âãÏÓ
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [6 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Length 3669 >>
+stream
+0.094 0.094 0.094 rg 0.00 806.00 595.00 36.00 re f
+BT /F2 11.00 Tf 48.00 819.00 Td 0.992 0.984 0.965 rg (YOps Cybersecurity) Tj ET
+BT /F2 9.00 Tf 353.77 819.00 Td 0.992 0.984 0.965 rg (RAPPORT · VULNÉRABILITÉS À CORRIGER) Tj ET
+BT /F2 22.00 Tf 48.00 778.00 Td 0.094 0.094 0.094 rg (Vérification de correction) Tj ET
+BT /F1 10.00 Tf 48.00 752.00 Td 0.502 0.482 0.439 rg (Alphatech · le 28/05/2026 · par YOps Admin) Tj ET
+0.624 0.176 0.176 rg 48.00 670.00 499.00 56.00 re f
+BT /F2 9.00 Tf 66.00 704.00 Td 0.992 0.984 0.965 rg (VERDICT YOPS) Tj ET
+BT /F2 18.00 Tf 66.00 682.00 Td 0.992 0.984 0.965 rg (BYPASS IDENTIFIÉ) Tj ET
+BT /F2 11.00 Tf 48.00 648.00 Td 0.094 0.094 0.094 rg (Vulnérabilité concernée) Tj ET
+0.835 0.812 0.769 rg 48.00 642.00 499.00 0.50 re f
+0.624 0.176 0.176 rg 48.00 479.88 3.00 144.12 re f
+0.624 0.176 0.176 rg 60.00 606.00 52.14 14.00 re f
+BT /F2 8.00 Tf 66.00 610.00 Td 1.000 1.000 1.000 rg (CRITIQUE) Tj ET
+0.094 0.094 0.094 rg 118.14 606.00 48.88 14.00 re f
+BT /F2 8.00 Tf 124.14 610.00 Td 0.992 0.984 0.965 rg (CVSS 9.1) Tj ET
+0.992 0.984 0.965 rg 173.02 606.00 43.26 14.00 re f
+BT /F2 8.00 Tf 179.02 610.00 Td 0.094 0.094 0.094 rg (À vérifier) Tj ET
+BT /F2 12.00 Tf 60.00 590.00 Td 0.094 0.094 0.094 rg (MFA absent sur compte administrateur) Tj ET
+BT /F1 9.00 Tf 60.00 574.16 Td 0.502 0.482 0.439 rg (Alphatech · Audit web portail client · Actif : portal.alphatech.local) Tj ET
+BT /F2 8.00 Tf 60.00 556.28 Td 0.502 0.482 0.439 rg (Description) Tj ET
+BT /F1 10.00 Tf 60.00 544.40 Td 0.094 0.094 0.094 rg (Compte admin exposé sans second facteur.) Tj ET
+BT /F2 8.00 Tf 60.00 525.20 Td 0.502 0.482 0.439 rg (Correctif recommandé) Tj ET
+BT /F1 10.00 Tf 60.00 513.32 Td 0.094 0.094 0.094 rg (Activer MFA obligatoire sur comptes privilegies.) Tj ET
+0.835 0.812 0.769 rg 48.00 492.12 499.00 0.50 re f
+BT /F2 11.00 Tf 48.00 480.12 Td 0.094 0.094 0.094 rg (Décision et message de l'analyste) Tj ET
+0.835 0.812 0.769 rg 48.00 474.12 499.00 0.50 re f
+BT /F1 10.00 Tf 60.00 456.12 Td 0.094 0.094 0.094 rg (Bypass via header X-Forwarded-For) Tj ET
+BT /F2 11.00 Tf 48.00 434.92 Td 0.094 0.094 0.094 rg (Étapes suivantes) Tj ET
+0.835 0.812 0.769 rg 48.00 428.92 499.00 0.50 re f
+BT /F1 10.00 Tf 60.00 410.92 Td 0.094 0.094 0.094 rg (Un bypass de votre correctif a été identifié. La vulnérabilité est réouverte avec contexte ci-dessous.) Tj ET
+BT /F2 11.00 Tf 48.00 389.72 Td 0.094 0.094 0.094 rg (Récapitulatif du portefeuille de vulnérabilités) Tj ET
+0.835 0.812 0.769 rg 48.00 383.72 499.00 0.50 re f
+0.992 0.984 0.965 rg 48.00 315.72 120.25 50.00 re f
+0.094 0.094 0.094 rg 48.00 315.72 3.00 50.00 re f
+BT /F2 8.00 Tf 62.00 349.72 Td 0.502 0.482 0.439 rg (OUVERTE) Tj ET
+BT /F2 20.00 Tf 62.00 327.72 Td 0.094 0.094 0.094 rg (2) Tj ET
+0.992 0.984 0.965 rg 174.25 315.72 120.25 50.00 re f
+0.094 0.094 0.094 rg 174.25 315.72 3.00 50.00 re f
+BT /F2 8.00 Tf 188.25 349.72 Td 0.502 0.482 0.439 rg (EN COURS) Tj ET
+BT /F2 20.00 Tf 188.25 327.72 Td 0.094 0.094 0.094 rg (1) Tj ET
+0.992 0.984 0.965 rg 300.50 315.72 120.25 50.00 re f
+0.094 0.094 0.094 rg 300.50 315.72 3.00 50.00 re f
+BT /F2 8.00 Tf 314.50 349.72 Td 0.502 0.482 0.439 rg (À VÉRIFIER) Tj ET
+BT /F2 20.00 Tf 314.50 327.72 Td 0.094 0.094 0.094 rg (0) Tj ET
+0.992 0.984 0.965 rg 426.75 315.72 120.25 50.00 re f
+0.094 0.094 0.094 rg 426.75 315.72 3.00 50.00 re f
+BT /F2 8.00 Tf 440.75 349.72 Td 0.502 0.482 0.439 rg (CORRIGÉE) Tj ET
+BT /F2 20.00 Tf 440.75 327.72 Td 0.094 0.094 0.094 rg (4) Tj ET
+0.835 0.812 0.769 rg 48.00 50.00 499.00 0.50 re f
+BT /F1 8.00 Tf 48.00 32.00 Td 0.502 0.482 0.439 rg (YOps Portal · Document interne) Tj ET
+BT /F1 8.00 Tf 521.65 32.00 Td 0.502 0.482 0.439 rg (Page 1) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 5 0 R >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000218 00000 n 
+0000000320 00000 n 
+0000004041 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+4177
+%%EOF

@@ -96,7 +96,14 @@ class ReportDelivery:
     id: int
     client_id: int
     client_name: str
+    audit_id: int | None
+    audit_title: str | None
+    vulnerability_id: int | None
+    vulnerability_title: str | None
     sent_by_name: str
+    kind: str
+    verdict: str | None
+    admin_message: str
     filename: str
     file_path: str
     vuln_count: int

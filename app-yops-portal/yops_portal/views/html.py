@@ -28,8 +28,8 @@ def cvss_chip(score) -> str:
     return f'<span class="cvss-chip cvss-{severity_from_cvss(value)}">{value:.1f}</span>'
 
 
-NEXT_STATUS = {"ouverte": "en_cours", "en_cours": "corrigee", "corrigee": "ouverte", "acceptee": "ouverte"}
-NEXT_STATUS_LABEL = {"ouverte": "Démarrer", "en_cours": "Marquer corrigée", "corrigee": "Réouvrir", "acceptee": "Réouvrir"}
+NEXT_STATUS = {"ouverte": "en_cours", "en_cours": "corrigee", "a_verifier": "corrigee", "corrigee": "ouverte", "acceptee": "ouverte"}
+NEXT_STATUS_LABEL = {"ouverte": "Démarrer", "en_cours": "Marquer corrigée", "a_verifier": "Valider la correction", "corrigee": "Réouvrir", "acceptee": "Réouvrir"}
 
 
 def status_action_form(vuln_id: int, status: str, return_to: str) -> str:
@@ -56,10 +56,24 @@ def score_edit_form(vuln_id: int, score, return_to: str) -> str:
     """
 
 
+STATUS_LABELS = {
+    "ouverte": "Ouverte",
+    "en_cours": "En cours",
+    "a_verifier": "À vérifier",
+    "corrigee": "Corrigée",
+    "acceptee": "Acceptée",
+    "termine": "Terminé",
+    "ouvert": "Ouvert",
+    "bloque": "Bloqué",
+    "planifie": "Planifié",
+}
+
+
 def status_badge(status: str) -> str:
     kind = {
         "ouverte": "critical",
         "en_cours": "high",
+        "a_verifier": "medium",
         "corrigee": "success",
         "acceptee": "neutral",
         "termine": "success",
@@ -67,7 +81,7 @@ def status_badge(status: str) -> str:
         "bloque": "high",
         "planifie": "neutral",
     }.get(status, "neutral")
-    return badge(status.replace("_", " "), kind)
+    return badge(STATUS_LABELS.get(status, status.replace("_", " ")), kind)
 
 
 def layout(title: str, user: SessionUser | None, content: str, active: str = "dashboard") -> bytes:
@@ -78,6 +92,7 @@ def layout(title: str, user: SessionUser | None, content: str, active: str = "da
                 ("home", "/", "Accueil"),
                 ("dashboard", "/dashboard", "Mon espace"),
                 ("audits", "/audits", "Mes audits"),
+                ("vulnerabilities", "/vulnerabilities", "Mes vulnérabilités"),
                 ("reports", "/reports", "Mes rapports"),
             ]
         else:
@@ -738,26 +753,41 @@ def client_dashboard_page(
     return layout("Espace client", user, content, "dashboard")
 
 
+VERDICT_LABEL_FR = {"validated": "Correction validée", "rejected": "Correction non validée", "bypass": "Bypass identifié"}
+VERDICT_BADGE_KIND = {"validated": "success", "rejected": "high", "bypass": "critical"}
+
+
+def _client_delivery_card(d) -> str:
+    if d.kind == "verification" and d.verdict:
+        title = f"Verdict — {e(d.vulnerability_title or 'vulnérabilité')}"
+        verdict_badge = f'<span class="badge badge-{VERDICT_BADGE_KIND.get(d.verdict, "neutral")}">{VERDICT_LABEL_FR.get(d.verdict, d.verdict)}</span>'
+        meta = f"{d.vuln_count} vulnérabilité · vérification YOps"
+    else:
+        title = e(d.audit_title) if d.audit_title else "Rapport de remédiation"
+        verdict_badge = ""
+        meta = f"{d.vuln_count} vulnérabilités · {d.critical_count} critiques"
+    status_badge_html = f'<span class="badge badge-{"high" if not d.read_at else "success"}">{"Nouveau" if not d.read_at else "Lu"}</span>'
+    return f"""
+    <article class="delivery-card {'is-unread' if not d.read_at else ''}">
+        <header>
+            {status_badge_html}
+            {verdict_badge}
+            <strong>{title}</strong>
+            <small>{meta}</small>
+        </header>
+        <p class="delivery-meta">Envoyé par {e(d.sent_by_name)} · {e(d.delivered_at)}</p>
+        <a class="primary-button" href="/reports/delivered/{d.id}.pdf">
+            <span>Télécharger le PDF</span><span class="button-dot">↓</span>
+        </a>
+    </article>
+    """
+
+
 def _client_deliveries_section(deliveries) -> str:
     if not deliveries:
         return ""
     unread = sum(1 for d in deliveries if not d.read_at)
-    cards = "".join(
-        f"""
-        <article class="delivery-card {'is-unread' if not d.read_at else ''}">
-            <header>
-                <span class="badge badge-{'high' if not d.read_at else 'success'}">{'Nouveau' if not d.read_at else 'Lu'}</span>
-                <strong>Rapport de remédiation</strong>
-                <small>{d.vuln_count} vulnérabilités · {d.critical_count} critiques</small>
-            </header>
-            <p class="delivery-meta">Envoyé par {e(d.sent_by_name)} · {e(d.delivered_at)}</p>
-            <a class="primary-button" href="/reports/delivered/{d.id}.pdf">
-                <span>Télécharger le PDF</span><span class="button-dot">↓</span>
-            </a>
-        </article>
-        """
-        for d in deliveries
-    )
+    cards = "".join(_client_delivery_card(d) for d in deliveries)
     return f"""
     <h2 id="deliveries" class="section-title reveal accent">
         <span>Rapports reçus de YOps</span>
@@ -1003,7 +1033,8 @@ def audits_page(user: SessionUser, audits) -> bytes:
     return layout("Audits", user, content, "audits")
 
 
-def audit_detail_page(user: SessionUser, audit, vulnerabilities) -> bytes:
+def audit_detail_page(user: SessionUser, audit, vulnerabilities, deliveries=None) -> bytes:
+    deliveries = deliveries or []
     rows = "".join(
         f"""
         <tr>
@@ -1012,9 +1043,166 @@ def audit_detail_page(user: SessionUser, audit, vulnerabilities) -> bytes:
         """
         for v in sorted(vulnerabilities, key=lambda v: float(v.cvss_score or 0), reverse=True)
     )
-    content = page_header(audit.title, f"{audit.client_name} · {audit.audit_type} · responsable {audit.owner_name}")
+    action = _audit_close_action(user, audit, vulnerabilities)
+    content = page_header(audit.title, f"{audit.client_name} · {audit.audit_type} · responsable {audit.owner_name}", action)
+    content += _audit_deliveries_block(deliveries)
     content += f'<article class="panel reveal"><div class="table-wrap"><table><thead><tr><th>Vulnérabilité</th><th>Criticité</th><th>Actif</th><th>Statut</th><th>CVSS</th></tr></thead><tbody>{rows}</tbody></table></div></article>'
     return layout("Audit", user, content, "audits")
+
+
+def _audit_close_action(user: SessionUser, audit, vulnerabilities) -> str:
+    if user.role == "client":
+        return ""
+    if audit.status == "termine":
+        return f'<span class="badge badge-success">Audit clôturé · {e(audit.ends_at or "-")}</span>'
+    total = len(vulnerabilities)
+    return f"""
+    <form method="post" action="/audits/{audit.id}/close" class="inline-form">
+        <button class="primary-button" type="submit"
+                onclick="return confirm('Clôturer cet audit et envoyer le rapport PDF au client ({total} vulnérabilité{"s" if total > 1 else ""}) ?');">
+            <span>Clôturer & envoyer rapport</span>
+            <span class="button-dot">↗</span>
+        </button>
+    </form>
+    """
+
+
+def _audit_deliveries_block(deliveries) -> str:
+    if not deliveries:
+        return ""
+    items = "".join(
+        f"""
+        <li class="delivery-row">
+            <div>
+                <strong><a href="/reports/delivered/{d.id}.pdf">{e(d.filename)}</a></strong>
+                <small>Envoyé par {e(d.sent_by_name)} · {e(d.delivered_at)} · {d.vuln_count} vulns ({d.critical_count} critiques)</small>
+            </div>
+            <span class="badge badge-{'success' if d.read_at else 'high'}">{'Lu par le client' if d.read_at else 'Non lu'}</span>
+        </li>
+        """
+        for d in deliveries
+    )
+    return f"""
+    <article class="panel reveal">
+        <div class="panel-head"><h2>Rapports envoyés au client</h2><small>{len(deliveries)} document{'s' if len(deliveries) > 1 else ''}</small></div>
+        <ul class="delivery-list">{items}</ul>
+    </article>
+    """
+
+
+def client_vulnerabilities_page(user: SessionUser, client, vulnerabilities) -> bytes:
+    open_vulns = [v for v in vulnerabilities if v.status in ("ouverte", "en_cours")]
+    pending = [v for v in vulnerabilities if v.status == "a_verifier"]
+    fixed = [v for v in vulnerabilities if v.status in ("corrigee", "acceptee")]
+
+    def row(v, with_action: bool) -> str:
+        action = ""
+        if with_action:
+            action = f"""
+            <form method="post" action="/client/vulnerabilities/{v.id}/fixed">
+                <button class="inline-button accept" type="submit"
+                        onclick="return confirm('Confirmer que cette vulnérabilité est corrigée ? L\\'équipe YOps vérifiera votre déclaration.');">
+                    J'ai corrigé
+                </button>
+            </form>
+            """
+        return f"""
+        <tr>
+            <td><strong>{e(v.title)}</strong><small>{e(v.asset)} · {e(v.audit_title)}</small></td>
+            <td>{severity_badge(v.severity)}</td>
+            <td>{cvss_chip(v.cvss_score)}</td>
+            <td>{status_badge(v.status)}</td>
+            <td class="row-actions">{action}</td>
+        </tr>
+        """
+
+    sorted_open = sorted(open_vulns, key=lambda v: -float(v.cvss_score or 0))
+    sorted_pending = sorted(pending, key=lambda v: -float(v.cvss_score or 0))
+    sorted_fixed = sorted(fixed, key=lambda v: v.title)
+
+    table_open = "".join(row(v, True) for v in sorted_open) or '<tr><td colspan="5" class="empty-row">Aucune vulnérabilité à corriger. 🎉</td></tr>'
+    table_pending = "".join(row(v, False) for v in sorted_pending)
+    table_fixed = "".join(row(v, False) for v in sorted_fixed)
+
+    content = page_header(
+        "Mes vulnérabilités",
+        f"{client.name} · {len(open_vulns)} à corriger · {len(pending)} en attente de validation · {len(fixed)} corrigées",
+    )
+    content += f"""
+    <article class="panel reveal">
+        <div class="panel-head"><h2>À corriger</h2><small>{len(open_vulns)} ouvertes ou en cours</small></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>Titre</th><th>Criticité</th><th>CVSS</th><th>Statut</th><th></th></tr></thead>
+            <tbody>{table_open}</tbody>
+        </table></div>
+    </article>
+    """
+    if pending:
+        content += f"""
+        <article class="panel reveal">
+            <div class="panel-head"><h2>En attente de validation YOps</h2><small>{len(pending)} corrections déclarées</small></div>
+            <div class="table-wrap"><table>
+                <thead><tr><th>Titre</th><th>Criticité</th><th>CVSS</th><th>Statut</th><th></th></tr></thead>
+                <tbody>{table_pending}</tbody>
+            </table></div>
+            <p class="form-help">Les vulnérabilités que vous avez marquées comme corrigées attendent la vérification de l'équipe YOps.</p>
+        </article>
+        """
+    if fixed:
+        content += f"""
+        <article class="panel reveal">
+            <div class="panel-head"><h2>Historique des corrections validées</h2><small>{len(fixed)} entrée{'s' if len(fixed) > 1 else ''}</small></div>
+            <div class="table-wrap"><table>
+                <thead><tr><th>Titre</th><th>Criticité</th><th>CVSS</th><th>Statut</th><th></th></tr></thead>
+                <tbody>{table_fixed}</tbody>
+            </table></div>
+        </article>
+        """
+    return layout("Mes vulnérabilités", user, content, "vulnerabilities")
+
+
+def _pending_verification_panel(vulnerabilities, return_to: str) -> str:
+    pending = [v for v in vulnerabilities if v.status == "a_verifier"]
+    if not pending:
+        return ""
+    cards = "".join(_verification_card(v, return_to) for v in sorted(pending, key=lambda v: -float(v.cvss_score or 0)))
+    return f"""
+    <h2 class="section-title reveal accent"><span>Corrections à vérifier</span><small>{len(pending)} déclarée{'s' if len(pending) > 1 else ''} par le client</small></h2>
+    <section class="verify-grid reveal">{cards}</section>
+    """
+
+
+def _verification_card(vuln, return_to: str) -> str:
+    return f"""
+    <article class="verify-card severity-{e(vuln.severity)}">
+        <header>
+            {severity_badge(vuln.severity)}
+            {cvss_chip(vuln.cvss_score)}
+            <strong>{e(vuln.title)}</strong>
+            <small>{e(vuln.client_name)} · {e(vuln.audit_title)} · Actif : {e(vuln.asset)}</small>
+        </header>
+        <form method="post" action="/vulnerabilities/{vuln.id}/verify" class="verify-form">
+            <input type="hidden" name="return_to" value="{e(return_to)}">
+            <fieldset class="verdict-options">
+                <legend>Verdict</legend>
+                <label class="verdict-option verdict-validated">
+                    <input type="radio" name="verdict" value="validated" required>
+                    <span><strong>Oui</strong><small>Correction validée</small></span>
+                </label>
+                <label class="verdict-option verdict-rejected">
+                    <input type="radio" name="verdict" value="rejected">
+                    <span><strong>Non</strong><small>Correction insuffisante</small></span>
+                </label>
+                <label class="verdict-option verdict-bypass">
+                    <input type="radio" name="verdict" value="bypass">
+                    <span><strong>Bypass trouvé</strong><small>Contournement identifié</small></span>
+                </label>
+            </fieldset>
+            <label>Message au client<textarea name="message" rows="3" placeholder="Détaille la décision : ce qui a été vérifié, le bypass éventuel, la prochaine étape..."></textarea></label>
+            <button class="primary-button" type="submit"><span>Envoyer le verdict + rapport PDF</span><span class="button-dot">↗</span></button>
+        </form>
+    </article>
+    """
 
 
 def vulnerabilities_page(user: SessionUser, vulnerabilities, audits, clients, query: dict, errors: list[str] | None = None) -> bytes:
@@ -1069,6 +1257,7 @@ def vulnerabilities_page(user: SessionUser, vulnerabilities, audits, clients, qu
         f"Registre technique · {len(filtered)} sur {len(vulnerabilities)} affichées.",
         '<a class="primary-button pdf-button" href="/reports/vulnerabilities.pdf"><span>Exporter PDF</span><span class="button-dot">↓</span></a>',
     )
+    content += _pending_verification_panel(vulnerabilities, return_to)
     content += f"""
     <section class="filter-bar reveal">
         <a class="chip {'is-active' if not any(query.values()) else ''}" href="/vulnerabilities">Toutes</a>
