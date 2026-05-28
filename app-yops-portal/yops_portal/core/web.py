@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -12,20 +13,25 @@ from yops_portal.repositories.audit_request_repository import AuditRequestReposi
 from yops_portal.repositories.base import BaseRepository
 from yops_portal.repositories.client_note_repository import ClientNoteRepository
 from yops_portal.repositories.client_repository import ClientRepository
+from yops_portal.repositories.report_delivery_repository import ReportDeliveryRepository
 from yops_portal.repositories.report_repository import ReportRepository
 from yops_portal.repositories.ticket_repository import TicketRepository
 from yops_portal.repositories.user_repository import UserRepository
 from yops_portal.repositories.vulnerability_repository import VulnerabilityRepository
 from yops_portal.services.auth_service import AuthService
 from yops_portal.services.client_risk_service import ClientRiskService
+from yops_portal.services.cvss import parse_cvss
 from yops_portal.services.dashboard_service import DashboardService
+from yops_portal.services.pdf_report import build_remediation_report
 from yops_portal.services.registration_service import RegistrationService
+from yops_portal.services.report_delivery_service import ReportDeliveryService
 from yops_portal.services.validation import ValidationError, require_fields
 from yops_portal.views import html
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 PUBLIC_DIR = ROOT_DIR / "public"
+PDF_STORAGE_DIR = ROOT_DIR / "storage" / "reports" / "pdf"
 
 
 class Services:
@@ -39,10 +45,12 @@ class Services:
         self.vulnerabilities = VulnerabilityRepository()
         self.tickets = TicketRepository()
         self.reports = ReportRepository()
+        self.deliveries = ReportDeliveryRepository()
         self.auth = AuthService(self.users)
         self.registration = RegistrationService(self.clients, self.users)
         self.risk = ClientRiskService(self.base)
         self.dashboard = DashboardService(self.base, self.risk)
+        self.report_delivery = ReportDeliveryService(self.vulnerabilities, self.clients, self.deliveries, PDF_STORAGE_DIR)
 
 
 class YOpsApplication:
@@ -94,6 +102,8 @@ class YOpsApplication:
                 return self.respond(request, self.client_dashboard(user))
             data = self.services.dashboard.get_dashboard()
             data["pending_requests"] = self.services.audit_requests.list_pending()
+            data["clients"] = self.services.clients.list_clients()
+            data["recent_deliveries"] = self.services.deliveries.list_recent(5)
             return self.respond(request, html.dashboard_page(user, data))
         if path == "/audit-requests":
             if user.role == "client":
@@ -158,6 +168,34 @@ class YOpsApplication:
             if user.role != "admin":
                 return self.redirect(request, "/dashboard")
             return self.respond(request, html.users_page(user, self.services.users.list_users()))
+        if path == "/reports/vulnerabilities.pdf":
+            if user.role == "client":
+                return self.redirect(request, "/dashboard")
+            open_statuses = ("ouverte", "en_cours")
+            vulns = [
+                v for v in self.services.vulnerabilities.list_vulnerabilities()
+                if v.status in open_statuses
+            ]
+            vulns.sort(key=lambda v: (-float(v.cvss_score or 0), v.client_name))
+            body = build_remediation_report(vulns, generated_by=user.name)
+            filename = f"yops-vulnerabilites-{date.today().isoformat()}.pdf"
+            return self.respond_binary(request, body, "application/pdf", filename)
+        if path.startswith("/reports/delivered/") and path.endswith(".pdf"):
+            try:
+                delivery_id = int(path.split("/")[3].removesuffix(".pdf"))
+            except (ValueError, IndexError):
+                return self.respond(request, html.not_found_page(user), HTTPStatus.NOT_FOUND)
+            delivery = self.services.deliveries.find(delivery_id)
+            if delivery is None:
+                return self.respond(request, html.not_found_page(user), HTTPStatus.NOT_FOUND)
+            if user.role == "client" and delivery.client_id != user.client_id:
+                return self.redirect(request, "/dashboard")
+            body = self.services.report_delivery.read_file(delivery.file_path)
+            if body is None:
+                return self.respond(request, html.not_found_page(user), HTTPStatus.NOT_FOUND)
+            if user.role == "client":
+                self.services.deliveries.mark_read(delivery.id)
+            return self.respond_binary(request, body, "application/pdf", delivery.filename)
         return self.respond(request, html.not_found_page(user), HTTPStatus.NOT_FOUND)
 
     def dispatch_post(self, request: BaseHTTPRequestHandler) -> None:
@@ -183,10 +221,10 @@ class YOpsApplication:
         if user is None:
             return self.redirect(request, "/login")
         if path == "/audit-requests" and user.role == "client":
+            if user.client_id is None:
+                return self.redirect(request, "/dashboard")
             try:
                 require_fields(data, ["audit_type", "scope"])
-                if user.client_id is None:
-                    return self.redirect(request, "/dashboard")
                 self.services.audit_requests.create({
                     "client_id": user.client_id,
                     "requested_by": user.id,
@@ -196,11 +234,35 @@ class YOpsApplication:
                     "urgency": data.get("urgency", "normal"),
                     "target_date": data.get("target_date", "").strip() or None,
                 })
-            except ValidationError:
-                pass
-            return self.redirect(request, "/dashboard#requests")
+                return self.redirect(request, "/dashboard#requests")
+            except ValidationError as exc:
+                client = self.services.clients.find(user.client_id)
+                if client is None:
+                    return self.redirect(request, "/dashboard")
+                return self.respond(
+                    request,
+                    html.client_dashboard_page(
+                        user,
+                        client,
+                        self.services.audits.list_for_client(client.id),
+                        self.services.vulnerabilities.list_for_client(client.id),
+                        self.services.tickets.list_for_client(client.id),
+                        self.services.reports.list_for_client(client.id),
+                        self.services.audit_requests.list_for_client(client.id),
+                        request_errors=exc.errors,
+                        request_form=data,
+                    ),
+                    HTTPStatus.BAD_REQUEST,
+                )
         if user.role == "client":
             return self.redirect(request, "/dashboard")
+        if path == "/reports/deliver":
+            try:
+                client_id = int(data.get("client_id", "0"))
+            except ValueError:
+                return self.redirect(request, "/dashboard")
+            self.services.report_delivery.deliver(client_id, user.id, user.name)
+            return self.redirect(request, "/dashboard#deliver")
         if path.startswith("/audit-requests/") and path.endswith("/respond"):
             try:
                 req_id = int(path.split("/")[2])
@@ -213,7 +275,7 @@ class YOpsApplication:
             message = data.get("message", "").strip()
             if decision == "accept":
                 title = data.get("title", "").strip() or f"Audit {req.audit_type} - {req.client_name}"
-                starts_at = data.get("starts_at", "").strip() or req.target_date or "2026-06-01"
+                starts_at = data.get("starts_at", "").strip() or req.target_date or date.today().isoformat()
                 audit_id = self.services.audits.create(
                     client_id=req.client_id,
                     owner_id=user.id,
@@ -259,21 +321,39 @@ class YOpsApplication:
             if vuln is not None and status in ("ouverte", "en_cours", "corrigee", "acceptee"):
                 self.services.vulnerabilities.update_status(vuln_id, status)
             return_to = data.get("return_to") or "/vulnerabilities"
-            return self.redirect(request, return_to)
-        if path == "/vulnerabilities":
+            return self.redirect(request, self._safe_return_to(return_to))
+        if path.startswith("/vulnerabilities/") and path.endswith("/score"):
             try:
-                require_fields(data, ["audit_id", "title", "description", "severity", "cvss_score", "asset", "evidence", "recommendation"])
+                vuln_id = int(path.split("/")[2])
+            except ValueError:
+                return self.redirect(request, "/vulnerabilities")
+            vuln = self.services.vulnerabilities.find(vuln_id)
+            try:
+                score = parse_cvss(data.get("cvss_score", ""))
+            except ValueError:
+                score = None
+            if vuln is not None and score is not None:
+                self.services.vulnerabilities.update_score(vuln_id, score)
+            return_to = data.get("return_to") or "/vulnerabilities"
+            return self.redirect(request, self._safe_return_to(return_to))
+        if path == "/vulnerabilities":
+            query = {key: values[-1] for key, values in parse_qs(parsed.query).items()}
+            try:
+                require_fields(data, ["audit_id", "title", "description", "cvss_score", "asset", "evidence", "recommendation"])
+                try:
+                    data["cvss_score"] = parse_cvss(data["cvss_score"])
+                except ValueError:
+                    raise ValidationError(["Le score CVSS doit etre un nombre entre 0 et 10."])
                 self.services.vulnerabilities.create(data)
-                query = {key: values[-1] for key, values in parse_qs(parsed.query).items()}
-                return self.redirect(request, query.get("return_to", "/vulnerabilities"))
+                return self.redirect(request, self._safe_return_to(query.get("return_to", "/vulnerabilities")))
             except ValidationError as exc:
-                query = {key: values[-1] for key, values in parse_qs(parsed.query).items()}
                 return self.respond(
                     request,
                     html.vulnerabilities_page(
                         user,
                         self.services.vulnerabilities.list_vulnerabilities(query.get("severity"), query.get("status")),
                         self.services.audits.list_audits(),
+                        self.services.clients.list_clients(),
                         query,
                         exc.errors,
                     ),
@@ -295,6 +375,7 @@ class YOpsApplication:
             self.services.tickets.list_for_client(client.id),
             self.services.reports.list_for_client(client.id),
             self.services.audit_requests.list_for_client(client.id),
+            deliveries=self.services.deliveries.list_for_client(client.id),
         )
 
     def serve_asset(self, request: BaseHTTPRequestHandler, path: str) -> None:
@@ -320,6 +401,14 @@ class YOpsApplication:
         request.send_response(status)
         request.send_header("Content-Type", "text/html; charset=utf-8")
         request.send_header("Content-Length", str(len(body)))
+        request.end_headers()
+        request.wfile.write(body)
+
+    def respond_binary(self, request: BaseHTTPRequestHandler, body: bytes, content_type: str, filename: str) -> None:
+        request.send_response(HTTPStatus.OK)
+        request.send_header("Content-Type", content_type)
+        request.send_header("Content-Length", str(len(body)))
+        request.send_header("Content-Disposition", f'attachment; filename="{filename}"')
         request.end_headers()
         request.wfile.write(body)
 
@@ -351,3 +440,8 @@ class YOpsApplication:
             return int(path.rstrip("/").split("/")[-1])
         except ValueError:
             return None
+
+    def _safe_return_to(self, target: str) -> str:
+        if not target.startswith("/") or target.startswith("//"):
+            return "/vulnerabilities"
+        return target

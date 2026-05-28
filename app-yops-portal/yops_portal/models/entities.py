@@ -92,6 +92,20 @@ class ClientNote:
 
 
 @dataclass(frozen=True)
+class ReportDelivery:
+    id: int
+    client_id: int
+    client_name: str
+    sent_by_name: str
+    filename: str
+    file_path: str
+    vuln_count: int
+    critical_count: int
+    delivered_at: str
+    read_at: str | None
+
+
+@dataclass(frozen=True)
 class AuditRequest:
     id: int
     client_id: int

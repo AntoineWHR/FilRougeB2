@@ -4,6 +4,7 @@ from html import escape
 from urllib.parse import urlencode
 
 from yops_portal.core.security import SessionUser
+from yops_portal.services.cvss import severity_from_cvss
 
 
 def e(value) -> str:
@@ -17,6 +18,42 @@ def badge(value: str, kind: str = "neutral") -> str:
 def severity_badge(severity: str) -> str:
     labels = {"critical": "Critique", "high": "Haute", "medium": "Moyenne", "low": "Faible"}
     return badge(labels.get(severity, severity), severity)
+
+
+def cvss_chip(score) -> str:
+    try:
+        value = float(score)
+    except (TypeError, ValueError):
+        value = 0.0
+    return f'<span class="cvss-chip cvss-{severity_from_cvss(value)}">{value:.1f}</span>'
+
+
+NEXT_STATUS = {"ouverte": "en_cours", "en_cours": "corrigee", "corrigee": "ouverte", "acceptee": "ouverte"}
+NEXT_STATUS_LABEL = {"ouverte": "Démarrer", "en_cours": "Marquer corrigée", "corrigee": "Réouvrir", "acceptee": "Réouvrir"}
+
+
+def status_action_form(vuln_id: int, status: str, return_to: str) -> str:
+    return f"""
+    <form method="post" action="/vulnerabilities/{vuln_id}/status">
+        <input type="hidden" name="status" value="{NEXT_STATUS.get(status, 'en_cours')}">
+        <input type="hidden" name="return_to" value="{e(return_to)}">
+        <button class="inline-button" type="submit">{NEXT_STATUS_LABEL.get(status, 'Avancer')}</button>
+    </form>
+    """
+
+
+def score_edit_form(vuln_id: int, score, return_to: str) -> str:
+    try:
+        value = float(score)
+    except (TypeError, ValueError):
+        value = 0.0
+    return f"""
+    <form class="cvss-edit" method="post" action="/vulnerabilities/{vuln_id}/score">
+        <input type="number" name="cvss_score" min="0" max="10" step="0.1" value="{value:.1f}" aria-label="Nouveau score CVSS">
+        <input type="hidden" name="return_to" value="{e(return_to)}">
+        <button class="inline-button" type="submit">↻</button>
+    </form>
+    """
 
 
 def status_badge(status: str) -> str:
@@ -323,11 +360,12 @@ def dashboard_page(user: SessionUser, data: dict) -> bytes:
     recent = "".join(
         f"""
         <tr>
-            <td>{e(v["title"])}</td>
+            <td><a href="/vulnerabilities">{e(v["title"])}</a></td>
             <td>{e(v["client_name"])}</td>
             <td>{severity_badge(v["severity"])}</td>
             <td>{status_badge(v["status"])}</td>
-            <td>{e(v["cvss_score"])}</td>
+            <td>{cvss_chip(v["cvss_score"])}</td>
+            <td class="row-actions">{status_action_form(v["id"], v["status"], "/dashboard")}</td>
         </tr>
         """
         for v in data["recent_vulnerabilities"]
@@ -411,7 +449,9 @@ def dashboard_page(user: SessionUser, data: dict) -> bytes:
         <a class="quick-action" href="/vulnerabilities"><span class="qa-icon">⚠</span><div><strong>Déclarer une faille</strong><small>Ajouter au registre</small></div></a>
         <a class="quick-action {'highlight' if pending_requests else ''}" href="/audit-requests"><span class="qa-icon">✉</span><div><strong>Demandes clients</strong><small>{len(pending_requests)} en attente</small></div></a>
         <a class="quick-action" href="/tickets"><span class="qa-icon">≡</span><div><strong>Tickets</strong><small>{stats["late_tickets"]} en retard</small></div></a>
+        <a class="quick-action" href="/reports/vulnerabilities.pdf"><span class="qa-icon">▤</span><div><strong>Export global</strong><small>Toutes les vulns à corriger</small></div></a>
     </section>
+    {_deliver_panel(data.get("clients", []), data.get("recent_deliveries", []))}
     {pending_section}
     <h2 class="section-title reveal"><span>Pilotage des audits</span><small>Avancement et actifs à risque</small></h2>
     <section class="split-grid reveal">
@@ -428,7 +468,7 @@ def dashboard_page(user: SessionUser, data: dict) -> bytes:
     <section class="split-grid reveal">
         <article class="panel">
             <div class="panel-head"><h2>Dernières vulnérabilités</h2><a href="/vulnerabilities">Tout voir</a></div>
-            <div class="table-wrap"><table><thead><tr><th>Titre</th><th>Client</th><th>Criticité</th><th>Statut</th><th>CVSS</th></tr></thead><tbody>{recent}</tbody></table></div>
+            <div class="table-wrap"><table><thead><tr><th>Titre</th><th>Client</th><th>Criticité</th><th>Statut</th><th>CVSS</th><th></th></tr></thead><tbody>{recent}</tbody></table></div>
         </article>
         <article class="panel">
             <div class="panel-head"><h2>Criticités</h2></div>
@@ -449,6 +489,41 @@ def dashboard_page(user: SessionUser, data: dict) -> bytes:
     </section>
     """
     return layout("Dashboard", user, content, "dashboard")
+
+
+def _deliver_panel(clients, recent_deliveries) -> str:
+    options = "".join(f'<option value="{c.id}">{e(c.name)}</option>' for c in clients)
+    rows = "".join(
+        f"""
+        <li class="delivery-row">
+            <div>
+                <strong><a href="/reports/delivered/{d.id}.pdf">{e(d.filename)}</a></strong>
+                <small>{e(d.client_name)} · {d.vuln_count} vulns ({d.critical_count} critiques) · envoyé par {e(d.sent_by_name)} · {e(d.delivered_at)}</small>
+            </div>
+            <span class="badge badge-{'success' if d.read_at else 'high'}">{'Lu' if d.read_at else 'Non lu'}</span>
+        </li>
+        """
+        for d in recent_deliveries
+    )
+    empty = '<li class="form-help">Aucun envoi récent.</li>'
+    return f"""
+    <h2 id="deliver" class="section-title reveal accent">
+        <span>Envoyer un rapport client</span>
+        <small>PDF de remédiation directement sur l'espace client</small>
+    </h2>
+    <section class="split-grid reveal">
+        <form class="panel form-panel" method="post" action="/reports/deliver">
+            <h2>Nouvel envoi</h2>
+            <label>Client destinataire<select name="client_id" required>{options}</select></label>
+            <p class="form-help">Le PDF inclut uniquement les vulnérabilités <strong>ouvertes</strong> ou <strong>en cours</strong> du client sélectionné. Il apparaît instantanément sur son dashboard.</p>
+            <button class="primary-button" type="submit"><span>Générer et envoyer</span><span class="button-dot">↗</span></button>
+        </form>
+        <article class="panel panel-wide">
+            <div class="panel-head"><h2>Envois récents</h2><small>{len(recent_deliveries)} dernier{'s' if len(recent_deliveries) > 1 else ''}</small></div>
+            <ul class="delivery-list">{rows or empty}</ul>
+        </article>
+    </section>
+    """
 
 
 def _pending_requests_block(requests) -> str:
@@ -569,8 +644,20 @@ def _request_card_client(req) -> str:
     """
 
 
-def client_dashboard_page(user: SessionUser, client, audits, vulnerabilities, tickets, reports, requests=None) -> bytes:
+def client_dashboard_page(
+    user: SessionUser,
+    client,
+    audits,
+    vulnerabilities,
+    tickets,
+    reports,
+    requests=None,
+    request_errors: list[str] | None = None,
+    request_form: dict[str, str] | None = None,
+    deliveries=None,
+) -> bytes:
     requests = requests or []
+    deliveries = deliveries or []
     audit_rows = "".join(
         f"""
         <tr>
@@ -582,15 +669,17 @@ def client_dashboard_page(user: SessionUser, client, audits, vulnerabilities, ti
         """
         for audit in audits
     )
+    sorted_vulns = sorted(vulnerabilities, key=lambda v: float(v.cvss_score or 0), reverse=True)
     vuln_rows = "".join(
         f"""
         <tr>
             <td>{e(vuln.title)}<small>{e(vuln.asset)}</small></td>
             <td>{severity_badge(vuln.severity)}</td>
+            <td>{cvss_chip(vuln.cvss_score)}</td>
             <td>{status_badge(vuln.status)}</td>
         </tr>
         """
-        for vuln in vulnerabilities[:6]
+        for vuln in sorted_vulns[:6]
     )
     ticket_rows = "".join(
         f"""
@@ -639,19 +728,65 @@ def client_dashboard_page(user: SessionUser, client, audits, vulnerabilities, ti
         </article>
         <article class="panel panel-wide">
             <div class="panel-head"><h2>Vulnérabilités principales</h2></div>
-            <div class="table-wrap"><table><thead><tr><th>Titre</th><th>Criticité</th><th>Statut</th></tr></thead><tbody>{vuln_rows}</tbody></table></div>
+            <div class="table-wrap"><table><thead><tr><th>Titre</th><th>Criticité</th><th>CVSS</th><th>Statut</th></tr></thead><tbody>{vuln_rows}</tbody></table></div>
         </article>
     </section>
     <section class="report-grid reveal">{report_cards}</section>
-    {_client_request_section(user, client, requests)}
+    {_client_deliveries_section(deliveries)}
+    {_client_request_section(user, client, requests, request_errors, request_form)}
     """
     return layout("Espace client", user, content, "dashboard")
 
 
-def _client_request_section(user: SessionUser, client, requests) -> str:
+def _client_deliveries_section(deliveries) -> str:
+    if not deliveries:
+        return ""
+    unread = sum(1 for d in deliveries if not d.read_at)
+    cards = "".join(
+        f"""
+        <article class="delivery-card {'is-unread' if not d.read_at else ''}">
+            <header>
+                <span class="badge badge-{'high' if not d.read_at else 'success'}">{'Nouveau' if not d.read_at else 'Lu'}</span>
+                <strong>Rapport de remédiation</strong>
+                <small>{d.vuln_count} vulnérabilités · {d.critical_count} critiques</small>
+            </header>
+            <p class="delivery-meta">Envoyé par {e(d.sent_by_name)} · {e(d.delivered_at)}</p>
+            <a class="primary-button" href="/reports/delivered/{d.id}.pdf">
+                <span>Télécharger le PDF</span><span class="button-dot">↓</span>
+            </a>
+        </article>
+        """
+        for d in deliveries
+    )
+    return f"""
+    <h2 id="deliveries" class="section-title reveal accent">
+        <span>Rapports reçus de YOps</span>
+        <small>{len(deliveries)} document{'s' if len(deliveries) > 1 else ''} — {unread} non lu{'s' if unread > 1 else ''}</small>
+    </h2>
+    <section class="delivery-grid reveal">{cards}</section>
+    """
+
+
+def _client_request_section(
+    user: SessionUser,
+    client,
+    requests,
+    errors: list[str] | None = None,
+    form: dict[str, str] | None = None,
+) -> str:
+    form = form or {}
     cards = "".join(_request_card_client(r) for r in requests) or '<p class="form-help">Aucune demande pour le moment.</p>'
-    audit_type_options = "".join(f'<option value="{key}">{label}</option>' for key, label in AUDIT_TYPE_LABELS.items())
-    urgency_options = "".join(f'<option value="{key}" {"selected" if key == "normal" else ""}>{label}</option>' for key, label in URGENCY_LABELS.items())
+    selected_type = form.get("audit_type", "")
+    selected_urgency = form.get("urgency", "normal")
+    audit_type_options = "".join(
+        f'<option value="{key}" {"selected" if key == selected_type else ""}>{label}</option>'
+        for key, label in AUDIT_TYPE_LABELS.items()
+    )
+    urgency_options = "".join(
+        f'<option value="{key}" {"selected" if key == selected_urgency else ""}>{label}</option>'
+        for key, label in URGENCY_LABELS.items()
+    )
+    error_html = "".join(f'<div class="notice error">{e(err)}</div>' for err in (errors or []))
     return f"""
     <h2 id="requests" class="section-title reveal">Demandes d'audit</h2>
     <section class="split-grid reveal">
@@ -664,11 +799,12 @@ def _client_request_section(user: SessionUser, client, requests) -> str:
         </article>
         <form class="panel form-panel" method="post" action="/audit-requests">
             <h2>Nouvelle demande</h2>
+            {error_html}
             <label>Type d'audit<select name="audit_type" required>{audit_type_options}</select></label>
-            <label>Périmètre (scope)<textarea name="scope" rows="4" placeholder="Quels actifs, URLs, applications ?" required></textarea></label>
-            <label>Règles d'engagement<textarea name="rules" rows="3" placeholder="Comptes de test, fenêtre de tir, exclusions, contraintes..."></textarea></label>
+            <label>Périmètre (scope)<textarea name="scope" rows="4" placeholder="Quels actifs, URLs, applications ?" required>{e(form.get("scope", ""))}</textarea></label>
+            <label>Règles d'engagement<textarea name="rules" rows="3" placeholder="Comptes de test, fenêtre de tir, exclusions, contraintes...">{e(form.get("rules", ""))}</textarea></label>
             <label>Urgence<select name="urgency">{urgency_options}</select></label>
-            <label>Date souhaitée<input name="target_date" type="date"></label>
+            <label>Date souhaitée<input name="target_date" type="date" value="{e(form.get("target_date", ""))}"></label>
             <button class="primary-button" type="submit"><span>Envoyer la demande</span><span class="button-dot">↗</span></button>
             <p class="form-help">Demandeur : {e(user.name)} - {e(client.name)}</p>
         </form>
@@ -736,8 +872,8 @@ def client_detail_page(user: SessionUser, client, audits, vulnerabilities, risk,
             <label>Audit du client<select name="audit_id">{audit_options}</select></label>
             <label>Titre<input name="title" required></label>
             <label>Description<textarea name="description" required></textarea></label>
-            <label>Criticité<select name="severity"><option value="low">Faible</option><option value="medium">Moyenne</option><option value="high">Haute</option><option value="critical">Critique</option></select></label>
-            <label>CVSS<input name="cvss_score" type="number" min="0" max="10" step="0.1" value="7.0" required></label>
+            <label>Score CVSS (0-10)<input name="cvss_score" type="number" min="0" max="10" step="0.1" value="7.0" required></label>
+            <p class="form-help">La criticité est déduite automatiquement du score (CVSS v3).</p>
             <label>Actif<input name="asset" required></label>
             <label>Preuve<textarea name="evidence" required></textarea></label>
             <label>Recommandation<textarea name="recommendation" required></textarea></label>
@@ -762,10 +898,10 @@ def client_detail_page(user: SessionUser, client, audits, vulnerabilities, risk,
             <td>{e(vuln.title)}<small>{e(vuln.asset)}</small></td>
             <td>{severity_badge(vuln.severity)}</td>
             <td>{status_badge(vuln.status)}</td>
-            <td>{e(vuln.cvss_score)}</td>
+            <td>{cvss_chip(vuln.cvss_score)}</td>
         </tr>
         """
-        for vuln in vulnerabilities[:8]
+        for vuln in sorted(vulnerabilities, key=lambda v: float(v.cvss_score or 0), reverse=True)[:8]
     )
     content = page_header(
         client.name,
@@ -871,10 +1007,10 @@ def audit_detail_page(user: SessionUser, audit, vulnerabilities) -> bytes:
     rows = "".join(
         f"""
         <tr>
-            <td>{e(v.title)}</td><td>{severity_badge(v.severity)}</td><td>{e(v.asset)}</td><td>{status_badge(v.status)}</td><td>{e(v.cvss_score)}</td>
+            <td>{e(v.title)}</td><td>{severity_badge(v.severity)}</td><td>{e(v.asset)}</td><td>{status_badge(v.status)}</td><td>{cvss_chip(v.cvss_score)}</td>
         </tr>
         """
-        for v in vulnerabilities
+        for v in sorted(vulnerabilities, key=lambda v: float(v.cvss_score or 0), reverse=True)
     )
     content = page_header(audit.title, f"{audit.client_name} · {audit.audit_type} · responsable {audit.owner_name}")
     content += f'<article class="panel reveal"><div class="table-wrap"><table><thead><tr><th>Vulnérabilité</th><th>Criticité</th><th>Actif</th><th>Statut</th><th>CVSS</th></tr></thead><tbody>{rows}</tbody></table></div></article>'
@@ -890,8 +1026,6 @@ def vulnerabilities_page(user: SessionUser, vulnerabilities, audits, clients, qu
     if search:
         filtered = [v for v in filtered if search in v.title.lower() or search in v.asset.lower() or search in v.description.lower()]
 
-    next_status = {"ouverte": "en_cours", "en_cours": "corrigee", "corrigee": "ouverte", "acceptee": "ouverte"}
-    next_label = {"ouverte": "Démarrer", "en_cours": "Marquer corrigée", "corrigee": "Réouvrir", "acceptee": "Réouvrir"}
     return_to = "/vulnerabilities" + (("?" + urlencode({k: v for k, v in query.items() if v})) if any(query.values()) else "")
 
     rows = "".join(
@@ -904,14 +1038,8 @@ def vulnerabilities_page(user: SessionUser, vulnerabilities, audits, clients, qu
             <td><a href="/clients/{_client_id_by_name(clients, v.client_name)}">{e(v.client_name)}</a></td>
             <td>{severity_badge(v.severity)}</td>
             <td>{status_badge(v.status)}</td>
-            <td>{e(v.cvss_score)}</td>
-            <td class="row-actions">
-                <form method="post" action="/vulnerabilities/{v.id}/status">
-                    <input type="hidden" name="status" value="{next_status.get(v.status, 'en_cours')}">
-                    <input type="hidden" name="return_to" value="{e(return_to)}">
-                    <button class="inline-button" type="submit">{next_label.get(v.status, 'Avancer')}</button>
-                </form>
-            </td>
+            <td>{score_edit_form(v.id, v.cvss_score, return_to)}</td>
+            <td class="row-actions">{status_action_form(v.id, v.status, return_to)}</td>
         </tr>
         """
         for v in filtered
@@ -939,6 +1067,7 @@ def vulnerabilities_page(user: SessionUser, vulnerabilities, audits, clients, qu
     content = page_header(
         "Vulnérabilités",
         f"Registre technique · {len(filtered)} sur {len(vulnerabilities)} affichées.",
+        '<a class="primary-button pdf-button" href="/reports/vulnerabilities.pdf"><span>Exporter PDF</span><span class="button-dot">↓</span></a>',
     )
     content += f"""
     <section class="filter-bar reveal">
@@ -962,8 +1091,8 @@ def vulnerabilities_page(user: SessionUser, vulnerabilities, audits, clients, qu
             <label>Audit (regroupé par client)<select name="audit_id" required>{audit_optgroups}</select></label>
             <label>Titre<input name="title" required></label>
             <label>Description<textarea name="description" required></textarea></label>
-            <label>Criticité<select name="severity"><option value="low">Faible</option><option value="medium">Moyenne</option><option value="high">Haute</option><option value="critical">Critique</option></select></label>
-            <label>CVSS<input name="cvss_score" type="number" min="0" max="10" step="0.1" value="7.0" required></label>
+            <label>Score CVSS (0-10)<input name="cvss_score" type="number" min="0" max="10" step="0.1" value="7.0" required></label>
+            <p class="form-help">La criticité est déduite automatiquement du score (CVSS v3).</p>
             <label>Actif<input name="asset" required></label>
             <label>Preuve<textarea name="evidence" required></textarea></label>
             <label>Recommandation<textarea name="recommendation" required></textarea></label>

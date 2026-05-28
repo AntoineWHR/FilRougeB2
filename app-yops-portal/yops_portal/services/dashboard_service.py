@@ -56,12 +56,13 @@ class DashboardService:
     def _recent_vulnerabilities(self) -> list[dict]:
         rows = self.repository.fetch_all(
             """
-            SELECT vulnerabilities.title, vulnerabilities.severity, vulnerabilities.status,
-                   vulnerabilities.cvss_score, clients.name AS client_name
+            SELECT vulnerabilities.id, vulnerabilities.title, vulnerabilities.severity,
+                   vulnerabilities.status, vulnerabilities.cvss_score,
+                   clients.name AS client_name
             FROM vulnerabilities
             JOIN audits ON audits.id = vulnerabilities.audit_id
             JOIN clients ON clients.id = audits.client_id
-            ORDER BY vulnerabilities.discovered_at DESC
+            ORDER BY vulnerabilities.cvss_score DESC, vulnerabilities.discovered_at DESC
             LIMIT 6
             """
         )

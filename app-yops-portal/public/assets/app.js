@@ -48,9 +48,7 @@ function animateCount(node) {
 }
 
 function formatValue(value) {
-  return Number.isInteger(parseFloat(value.toFixed(2)) ? value : value)
-    ? Math.round(value).toString()
-    : value.toFixed(1);
+  return Number.isInteger(value) ? Math.round(value).toString() : value.toFixed(1);
 }
 
 const searchInputs = document.querySelectorAll("[data-search-target]");

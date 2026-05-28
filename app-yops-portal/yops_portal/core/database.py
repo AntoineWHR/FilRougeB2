@@ -207,6 +207,22 @@ def create_schema(db: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_notes_created ON client_notes(created_at);
         CREATE INDEX IF NOT EXISTS idx_requests_status ON audit_requests(status);
         CREATE INDEX IF NOT EXISTS idx_requests_client ON audit_requests(client_id);
+
+        CREATE TABLE IF NOT EXISTS report_deliveries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            client_id INTEGER NOT NULL,
+            sent_by INTEGER NOT NULL,
+            filename TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            vuln_count INTEGER NOT NULL DEFAULT 0,
+            critical_count INTEGER NOT NULL DEFAULT 0,
+            delivered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            read_at TEXT,
+            FOREIGN KEY (client_id) REFERENCES clients(id),
+            FOREIGN KEY (sent_by) REFERENCES users(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_deliveries_client ON report_deliveries(client_id);
         """
     )
 
