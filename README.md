@@ -20,6 +20,10 @@ Le but du projet est de mettre en place une infrastructure d'entreprise complete
 - Mettre en place une premiere brique SOC avec Wazuh.
 - Documenter l'infrastructure pour une presentation orale et un rapport.
 
+## Organisation
+
+![TRELLO](doc-github/assets/trello.png)
+
 ## Architecture generale
 
 | Zone | Role | Reseau |
